@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ShortCompose"
 include(":app")
+include(":security")
