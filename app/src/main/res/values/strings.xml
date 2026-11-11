@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShortCompose</string>
+    <string name="shell_title">App Shell</string>
+    <string name="shell_loading">Preparing app...</string>
+    <string name="generic_back">Back</string>
+    <string name="generic_open">Open</string>
+    <string name="feature_cinemix_title">Cinemix</string>
+    <string name="feature_cinemix_description">This starter screen belongs to the Cinemix feature inside the single app module.</string>
+    <string name="feature_playlist_title">Playlist</string>
+    <string name="feature_playlist_description">This starter screen belongs to the Playlist feature inside the single app module.</string>
+    <string name="feature_settings_title">Settings</string>
+    <string name="feature_settings_description">This starter screen belongs to the Settings feature inside the single app module.</string>
+</resources>
