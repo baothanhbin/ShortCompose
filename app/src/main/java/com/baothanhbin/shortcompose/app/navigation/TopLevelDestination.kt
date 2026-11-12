@@ -15,20 +15,20 @@ enum class TopLevelDestination(
 ) {
     CINEMIX(
         route = CINEMIX_ROUTE,
-        selectedIconId = R.drawable.ic_top_level_selected,
-        unselectedIconId = R.drawable.ic_top_level_unselected,
+        selectedIconId = R.drawable.ic_cinemix_movie,
+        unselectedIconId = R.drawable.ic_cinemix_movie,
         labelId = R.string.feature_cinemix_title,
     ),
     PLAYLIST(
         route = PLAYLIST_ROUTE,
-        selectedIconId = R.drawable.ic_top_level_selected,
-        unselectedIconId = R.drawable.ic_top_level_unselected,
+        selectedIconId = R.drawable.ic_cinemix_playlist,
+        unselectedIconId = R.drawable.ic_cinemix_playlist,
         labelId = R.string.feature_playlist_title,
     ),
     SETTINGS(
         route = SETTINGS_ROUTE,
-        selectedIconId = R.drawable.ic_top_level_selected,
-        unselectedIconId = R.drawable.ic_top_level_unselected,
+        selectedIconId = R.drawable.ic_cinemix_settings,
+        unselectedIconId = R.drawable.ic_cinemix_settings,
         labelId = R.string.feature_settings_title,
-    )
+    ),
 }

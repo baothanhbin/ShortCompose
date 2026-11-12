@@ -2,31 +2,26 @@ package com.baothanhbin.shortcompose.app.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
-import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.app.MainViewModel
 import com.baothanhbin.shortcompose.app.navigation.MainNavHost
 import com.baothanhbin.shortcompose.app.navigation.TopLevelDestination
 import com.baothanhbin.shortcompose.app.navigation.rememberAppState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainApp(
     viewModel: MainViewModel = hiltViewModel(),
@@ -34,54 +29,37 @@ fun MainApp(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val appState = rememberAppState()
     val currentDestination = appState.currentDestination()
-    val labelRes = TopLevelDestination.entries
-        .firstOrNull { destination -> currentDestination?.hierarchy?.any { it.route == destination.route } == true }
-        ?.labelId
-        ?: R.string.app_name
+    val contentAlpha = remember { Animatable(1f) }
+    // Mirrors ASD113's MainActivity: swap tab immediately, then fade the page from .96 to 1.
+    LaunchedEffect(currentDestination?.route) {
+        contentAlpha.snapTo(0.96f)
+        contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 120))
+    }
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(text = stringResource(labelRes))
-                },
+        // Screens render underneath the floating glass nav, just like the XML ViewPager.
+        // Without this, Scaffold's default light surface is visible through the glass.
+        containerColor = Color(0xFF130A0B),
+        contentColor = Color.White,
+        bottomBar = {
+            CinemixBottomBar(
+                selectedDestination = TopLevelDestination.entries.firstOrNull { destination ->
+                    currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                } ?: TopLevelDestination.CINEMIX,
+                onDestinationClick = appState::navigateToTopLevelDestination,
             )
         },
-        bottomBar = {
-            if (TopLevelDestination.entries.size > 1) {
-                NavigationBar {
-                    TopLevelDestination.entries.forEach { destination ->
-                        val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { appState.navigateToTopLevelDestination(destination) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (selected) destination.selectedIconId else destination.unselectedIconId,
-                                    ),
-                                    contentDescription = stringResource(destination.labelId),
-                                )
-                            },
-                            label = {
-                                Text(text = stringResource(destination.labelId))
-                            },
-                        )
-                    }
-                }
-            }
-        },
-    ) { innerPadding ->
+    ) { _ ->
         if (uiState.isReady) {
             MainNavHost(
                 navController = appState.navController,
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier
+                    .graphicsLayer { alpha = contentAlpha.value },
             )
         } else {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
