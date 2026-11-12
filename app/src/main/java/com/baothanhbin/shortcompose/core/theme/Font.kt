@@ -4,14 +4,10 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.baothanhbin.shortcompose.R
 
-val beproSemibold = FontFamily(
-    Font(R.font.bevietnampro_semibold),
+val sfProBold = FontFamily(
+    Font(R.font.sf_pro_rounded_bold),
 )
 
-val beproMedium = FontFamily(
-    Font(R.font.bevietnampro_medium),
-)
-
-val beproRegular = FontFamily(
-    Font(R.font.bevietnampro_regular),
+val sfProMedium = FontFamily(
+    Font(R.font.sf_pro_medium),
 )

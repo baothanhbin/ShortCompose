@@ -1,10 +1,9 @@
 package com.baothanhbin.shortcompose.feature.cinemix.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -13,6 +12,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -20,13 +20,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.baothanhbin.shortcompose.R
 
 private val Bg = Color(0xFF130A0B)
 private val PeakRed = Color(0xFFEA7B71)
@@ -84,25 +88,24 @@ fun CinemixContent(title: String, modifier: Modifier = Modifier) {
 private fun TopBar(title: String) = Row(
     Modifier
         .fillMaxWidth()
+        .padding(top = 16.dp, start = 16.dp, end = 16.dp)
         .height(64.dp)
-        .padding(horizontal = 20.dp),
+        .paint(painterResource(R.drawable.bg_top), contentScale = ContentScale.FillBounds)
+        .padding(horizontal = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
 ) {
     Text(
         title,
+        style = MaterialTheme.typography.titleLarge,
         color = Color.White,
-        fontSize = 28.sp,
-        fontWeight = FontWeight.Bold,
         modifier = Modifier.weight(1f)
     )
-    Text(
-        "⌕",
-        color = Color.White,
-        fontSize = 32.sp,
+    Image(
+        painter = painterResource(R.drawable.iv_search),
+        contentDescription = null,
         modifier = Modifier
             .size(48.dp)
-            .clickable { }
-            .padding(bottom = 5.dp))
+            .clickable { })
 }
 
 @Composable
@@ -162,7 +165,7 @@ private fun BannerCard(movie: MovieUi) = Box(
         Text(
             "▶  Watch now",
             color = Color.White,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.labelLarge,
             modifier = Modifier
                 .height(48.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -173,7 +176,7 @@ private fun BannerCard(movie: MovieUi) = Box(
         Text(
             "♡",
             color = Color.White,
-            fontSize = 26.sp,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -194,8 +197,7 @@ private fun CategorySection(categories: List<String>) = Column {
             Text(
                 category,
                 color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier
                     .height(40.dp)
                     .clip(RoundedCornerShape(20.dp))
@@ -236,8 +238,7 @@ private fun SectionHeader(title: String) = Row(
     Text(
         title,
         color = Color.White,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.titleMedium,
         modifier = Modifier
             .weight(1f)
             .padding(start = 8.dp)
@@ -245,8 +246,7 @@ private fun SectionHeader(title: String) = Row(
     Text(
         "See all ›",
         color = PeakRed,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.labelLarge,
         modifier = Modifier.clickable { })
 }
 
@@ -266,7 +266,7 @@ private fun MovieCard(movie: MovieUi) = Column(
         Text(
             "▶ ${movie.views}",
             color = Color.White,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(8.dp)
@@ -277,8 +277,7 @@ private fun MovieCard(movie: MovieUi) = Column(
     Text(
         movie.title,
         color = Color.White,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.bodyMedium,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(top = 8.dp)
@@ -313,15 +312,14 @@ private fun EditorChoiceCard(movie: MovieUi) = Box(
         Text(
             movie.title,
             color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             "▶  Play now",
             color = Color.White,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelLarge,
             modifier = Modifier
                 .height(48.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -333,7 +331,7 @@ private fun EditorChoiceCard(movie: MovieUi) = Box(
 
 @Composable
 private fun Pill(text: String, modifier: Modifier = Modifier) = Text(
-    text, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+    text, color = Color.White, style = MaterialTheme.typography.labelSmall,
     modifier = modifier
         .clip(RoundedCornerShape(12.dp))
         .background(Color(0x66000000))
@@ -356,3 +354,9 @@ private fun PosterTexture(modifier: Modifier = Modifier) = Box(
         }
     },
 )
+
+@Preview()
+@Composable
+private fun CinemixContentPreview() {
+    CinemixContent(title = "Cinemix")
+}
