@@ -1,362 +1,390 @@
 package com.baothanhbin.shortcompose.feature.cinemix.component
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.paint
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import coil.compose.AsyncImage
 import com.baothanhbin.shortcompose.R
+import com.baothanhbin.shortcompose.core.model.Movie
+import com.baothanhbin.shortcompose.core.ui.drawableBackground
+import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.ui.component.MovieCard
+import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
+import com.baothanhbin.shortcompose.core.ui.preview.previewHomeContent
+import com.baothanhbin.shortcompose.feature.cinemix.CinemixUiState
+import kotlinx.coroutines.delay
 
-private val Bg = Color(0xFF130A0B)
-private val PeakRed = Color(0xFFEA7B71)
-
-private data class MovieUi(
-    val id: String,
-    val title: String,
-    val rating: String = "4.8",
-    val views: String = "12.4M",
-    val colors: List<Color>,
-)
-
-private val banners = listOf(
-    MovieUi("b1", "The Secret Wife", "4.9", "18.2M", listOf(Color(0xFF652821), Color(0xFF120809))),
-    MovieUi(
-        "b2", "Love Behind the Mask", "4.8", "15.8M", listOf(Color(0xFF4D1B34), Color(0xFF11080F))
-    ),
-    MovieUi(
-        "b3", "A Dangerous Promise", "4.7", "12.1M", listOf(Color(0xFF253F56), Color(0xFF090E14))
-    ),
-)
-
-private val movies = listOf(
-    MovieUi("m1", "The Contract Bride", colors = listOf(Color(0xFF7A2A31), Color(0xFF1D0B0E))),
-    MovieUi("m2", "His Hidden Love", colors = listOf(Color(0xFF59355E), Color(0xFF140E18))),
-    MovieUi("m3", "Never Let Me Go", colors = listOf(Color(0xFF295563), Color(0xFF0B161B))),
-    MovieUi("m4", "The Last Heiress", colors = listOf(Color(0xFF70451F), Color(0xFF1B1007))),
-    MovieUi("m5", "Revenge of the Queen", colors = listOf(Color(0xFF6C233D), Color(0xFF1A0710))),
-)
+private val Background = Color(0xFF130A0B)
+private val Accent = Color(0xFFEA7B71)
 
 @Composable
-fun CinemixContent(title: String, modifier: Modifier = Modifier) {
-    val categories = remember { listOf("Romance", "Drama", "Action", "Family", "Comedy") }
-    val pagerState = rememberPagerState { banners.size }
-
-    Column(
-        modifier = modifier
+fun CinemixContent(
+    state: CinemixUiState,
+    onRetry: () -> Unit,
+    onMovieClick: (Long) -> Unit,
+    onSearchClick: () -> Unit,
+    onCategoryClick: (String) -> Unit,
+    onSeeAllClick: (String) -> Unit,
+) {
+    Box(
+        Modifier
             .fillMaxSize()
-            .background(Bg)
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 108.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
     ) {
-        TopBar(title)
-        BannerPager(pagerState)
-        CategorySection(categories)
-        movieSection("Trending now", movies)
-        movieSection("New releases", movies.reversed())
-        movieSection("Spotlight", movies.drop(1) + movies.take(1))
-        EditorChoiceCard(banners.first())
+        when {
+            state.isLoading -> HomeSkeleton()
+            state.error != null || state.errorRes != null -> Column(
+                Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(state.error ?: stringResource(state.errorRes!!), color = Color.White)
+                Text(
+                    stringResource(R.string.action_try_again),
+                    color = Accent,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .asdTap(onClick = onRetry)
+                )
+            }
+
+            state.content != null -> LazyColumn(
+                contentPadding = PaddingValues(bottom = 112.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item { TopBar(onSearchClick) }
+                if (state.content.banners.isNotEmpty()) item {
+                    BannerPager(
+                        state.content.banners, onMovieClick
+                    )
+                }
+                item {
+                    SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(state.content.categories, key = { it.queryName }) { category ->
+                            Text(
+                                category.name,
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier
+                                    .drawableBackground(R.drawable.bg_cinemix_chip)
+                                    .asdTap { onCategoryClick(category.queryName) }
+                                    .padding(horizontal = 16.dp, vertical = 11.dp))
+                        }
+                    }
+                }
+                item {
+                    MovieSection(
+                        stringResource(R.string.cinemix_trending_now), state.content.trending, onMovieClick
+                    ) { onSeeAllClick("trending") }
+                }
+                item {
+                    MovieSection(
+                        stringResource(R.string.cinemix_new_releases), state.content.newRelease, onMovieClick
+                    ) { onSeeAllClick("new") }
+                }
+                item {
+                    MovieSection(
+                        stringResource(R.string.cinemix_spotlight), state.content.spotlight, onMovieClick
+                    ) { onSeeAllClick("spotlight") }
+                }
+                state.content.spotlight.firstOrNull()
+                    ?.let { movie -> item { EditorChoice(movie) { onMovieClick(movie.id) } } }
+            }
+        }
     }
 }
 
 @Composable
-private fun TopBar(title: String) = Row(
+private fun HomeSkeleton() = LazyColumn(
+    modifier = Modifier.fillMaxSize(),
+    contentPadding = PaddingValues(bottom = 112.dp),
+    verticalArrangement = Arrangement.spacedBy(18.dp),
+) {
+    item {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(64.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(.09f))
+        )
+    }
+    item {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .height(220.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(.09f))
+        )
+    }
+    items(3) {
+        Column {
+            Box(
+                Modifier
+                    .padding(horizontal = 16.dp)
+                    .width(160.dp)
+                    .height(24.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White.copy(.09f))
+            )
+            Row(
+                Modifier.padding(top = 14.dp, start = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                repeat(3) {
+                    Box(
+                        Modifier
+                            .width(126.dp)
+                            .height(184.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(.09f))
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopBar(onSearchClick: () -> Unit) = Row(
     Modifier
         .fillMaxWidth()
         .padding(top = 16.dp, start = 16.dp, end = 16.dp)
         .height(64.dp)
         .paint(painterResource(R.drawable.bg_top), contentScale = ContentScale.FillBounds)
-        .padding(horizontal = 8.dp),
+        .padding(horizontal = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
 ) {
     Text(
-        title,
-        style = MaterialTheme.typography.titleLarge,
+        stringResource(R.string.app_name),
         color = Color.White,
+        style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.weight(1f)
     )
     Image(
-        painter = painterResource(R.drawable.iv_search),
-        contentDescription = null,
+        painterResource(R.drawable.iv_seach),
+        stringResource(R.string.action_search),
         modifier = Modifier
             .size(48.dp)
-            .clickable { })
+            .asdTap(onClick = onSearchClick)
+    )
 }
 
 @Composable
-private fun BannerPager(pagerState: PagerState) = Column {
+private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
+    val state = rememberPagerState { movies.size }
+    LaunchedEffect(state, movies.size) {
+        while (movies.size > 1) {
+            delay(8_000)
+            state.animateScrollToPage((state.currentPage + 1) % movies.size)
+        }
+    }
     HorizontalPager(
-        state = pagerState,
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        pageSpacing = 12.dp,
-    ) { BannerCard(banners[it]) }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp), horizontalArrangement = Arrangement.Center
-    ) {
-        repeat(banners.size) { index ->
+        state, contentPadding = PaddingValues(horizontal = 16.dp), pageSpacing = 12.dp
+    ) { page ->
+        val movie = movies[page]
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF6A3038), Background)))
+                .asdTap { onMovieClick(movie.id) }) {
+            AsyncImage(
+                movie.posterUrl,
+                movie.title,
+                Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
             Box(
                 Modifier
-                    .padding(horizontal = 3.dp)
-                    .width(if (index == pagerState.currentPage) 18.dp else 6.dp)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(99.dp))
+                    .matchParentSize()
                     .background(
-                        if (index == pagerState.currentPage) PeakRed else Color.White.copy(
-                            .28f
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent, Color(0xD0000000)
+                            )
                         )
-                    ),
+                    )
             )
+            Text(
+                stringResource(R.string.cinemix_for_you),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.align(Alignment.TopStart).padding(10.dp)
+                    .height(24.dp)
+                    .drawableBackground(R.drawable.bg_cinemix_badge)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+            Row(
+                Modifier.align(Alignment.TopEnd).padding(10.dp).height(24.dp)
+                    .drawableBackground(R.drawable.bg_cinemix_rating),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (movie.rating > 0) "%.1f".format(movie.rating) else "4.7",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+                Image(painterResource(R.drawable.ic_cinemix_star), null, Modifier.size(24.dp))
+            }
+            Row(
+                Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 10.dp, end = 66.dp)
+                    .fillMaxWidth().height(48.dp)
+                    .drawableBackground(R.drawable.bg_age_button_primary)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Image(painterResource(R.drawable.ic_cinemix_play), null, Modifier.size(24.dp))
+                Text(stringResource(R.string.action_watch_now), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 8.dp))
+            }
+            Box(
+                Modifier.align(Alignment.BottomEnd).padding(end = 10.dp, bottom = 10.dp).size(48.dp)
+                    .drawableBackground(R.drawable.bg_cinemix_banner),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painterResource(if (movie.isFavorite) R.drawable.ic_cinemix_favorite_on else R.drawable.ic_cinemix_favorite_off),
+                    stringResource(R.string.action_favorite),
+                    Modifier.size(24.dp),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun BannerCard(movie: MovieUi) = Box(
+private fun EditorChoice(movie: Movie, onClick: () -> Unit) = Box(
     Modifier
         .fillMaxWidth()
-        .height(220.dp)
-        .clip(RoundedCornerShape(24.dp))
-        .background(Brush.linearGradient(movie.colors)),
+        .padding(horizontal = 16.dp)
+        .height(202.dp)
+        .clip(RoundedCornerShape(20.dp))
+        .background(Color.White.copy(.09f))
+        .asdTap(onClick = onClick),
 ) {
-    PosterTexture(Modifier.matchParentSize())
-    Pill(
-        "FOR YOU", Modifier
-            .align(Alignment.TopStart)
-            .padding(10.dp)
+    AsyncImage(
+        movie.posterUrl, movie.title, Modifier.matchParentSize(), contentScale = ContentScale.Crop
     )
-    Pill(
-        "★ ${movie.rating}", Modifier
-            .align(Alignment.TopEnd)
-            .padding(10.dp)
-    )
-    Row(
+    Box(Modifier.matchParentSize().drawableBackground(R.drawable.bg_cinemix_editor_overlay))
+    Column(
         Modifier
-            .align(Alignment.BottomStart)
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .align(Alignment.CenterEnd)
+            .width(220.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.End
     ) {
+        Row(Modifier.paint(painterResource(R.drawable.bg_cinemix_favorite), contentScale = ContentScale.FillBounds).padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(R.drawable.ic_cinemix_military), null, Modifier.size(24.dp))
+            Text(stringResource(R.string.cinemix_editors_choice), color = Color(0xFFFFF1F1), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 4.dp))
+        }
         Text(
-            "▶  Watch now",
+            movie.title,
             color = Color.White,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier
-                .height(48.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(PeakRed)
-                .clickable { }
-                .padding(horizontal = 18.dp, vertical = 14.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            "♡",
-            color = Color.White,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0x55000000))
-                .clickable { }
-                .padding(start = 11.dp, top = 7.dp))
-    }
-}
-
-@Composable
-private fun CategorySection(categories: List<String>) = Column {
-    SectionHeader("Feel the vibes")
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(categories) { category ->
-            Text(
-                category,
-                color = Color.White,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White.copy(.12f))
-                    .clickable { }
-                    .padding(horizontal = 16.dp, vertical = 10.dp))
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Row(Modifier.padding(top = 16.dp).height(48.dp).drawableBackground(R.drawable.bg_age_button_primary).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(R.drawable.ic_cinemix_play), null, Modifier.size(24.dp))
+            Text(stringResource(R.string.action_play_now), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
 
 @Composable
-private fun movieSection(title: String, movies: List<MovieUi>) = Column {
-    SectionHeader(title)
+private fun MovieSection(
+    title: String, movies: List<Movie>, onMovieClick: (Long) -> Unit, onSeeAll: () -> Unit
+) = Column {
+    SectionHeader(title, onSeeAll)
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(movies, key = { it.id }) { MovieCard(it) }
+        items(movies, key = { it.id }) { movie -> MovieCard(movie, { onMovieClick(movie.id) }, Modifier.width(120.dp)) }
     }
 }
 
-
 @Composable
-private fun SectionHeader(title: String) = Row(
+private fun SectionHeader(title: String, onSeeAll: (() -> Unit)? = null) = Row(
     Modifier
         .fillMaxWidth()
         .height(48.dp)
         .padding(horizontal = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
 ) {
-    Box(
-        Modifier
-            .width(8.dp)
-            .height(18.dp)
-            .clip(RoundedCornerShape(99.dp))
-            .background(PeakRed)
-    )
+    Image(painterResource(R.drawable.ic_cinemix_section_marker), null, Modifier.width(8.dp).height(18.dp))
     Text(
         title,
         color = Color.White,
         style = MaterialTheme.typography.titleMedium,
         modifier = Modifier
-            .weight(1f)
             .padding(start = 8.dp)
+            .weight(1f)
     )
-    Text(
-        "See all ›",
-        color = PeakRed,
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier.clickable { })
-}
-
-@Composable
-private fun MovieCard(movie: MovieUi) = Column(
-    Modifier
-        .width(120.dp)
-        .clickable { }) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.verticalGradient(movie.colors))
-    ) {
-        PosterTexture(Modifier.matchParentSize())
-        Text(
-            "▶ ${movie.views}",
-            color = Color.White,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(8.dp)
-                .background(Color(0x66000000), RoundedCornerShape(10.dp))
-                .padding(horizontal = 6.dp, vertical = 4.dp)
-        )
-    }
-    Text(
-        movie.title,
-        color = Color.White,
-        style = MaterialTheme.typography.bodyMedium,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-}
-
-@Composable
-private fun EditorChoiceCard(movie: MovieUi) = Box(
-    Modifier
-        .fillMaxWidth()
-        .height(202.dp)
-        .padding(horizontal = 16.dp)
-        .clip(RoundedCornerShape(20.dp))
-        .background(Brush.horizontalGradient(movie.colors)),
-) {
-    PosterTexture(Modifier.matchParentSize())
-    Column(
-        Modifier
-            .align(Alignment.CenterEnd)
-            .width(220.dp)
-            .fillMaxSize()
-            .background(
-                Brush.horizontalGradient(
-                    0f to Color.Transparent, .42f to Color(0x6613090B), 1f to Color(0xE013090B)
-                )
-            )
-            .padding(16.dp),
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Pill("✦  EDITOR'S CHOICE")
-        Text(
-            movie.title,
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            "▶  Play now",
-            color = Color.White,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier
-                .height(48.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(PeakRed)
-                .clickable { }
-                .padding(horizontal = 22.dp, vertical = 14.dp))
+    if (onSeeAll != null) Row(Modifier.width(95.dp).height(44.dp).paint(painterResource(R.drawable.bg_see_all), contentScale = ContentScale.FillBounds).asdTap(onClick = onSeeAll), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Text(stringResource(R.string.action_see_all), color = Accent, style = MaterialTheme.typography.labelLarge)
+        Image(painterResource(R.drawable.ic_cinemix_arrow_right), null, Modifier.size(24.dp))
     }
 }
 
+@Preview(name = "Cinemix - Content", showBackground = true, showSystemUi = true)
 @Composable
-private fun Pill(text: String, modifier: Modifier = Modifier) = Text(
-    text, color = Color.White, style = MaterialTheme.typography.labelSmall,
-    modifier = modifier
-        .clip(RoundedCornerShape(12.dp))
-        .background(Color(0x66000000))
-        .padding(horizontal = 8.dp, vertical = 5.dp),
-)
+private fun CinemixContentPreview() = PreviewTheme {
+    CinemixContent(
+        state = CinemixUiState(isLoading = false, content = previewHomeContent),
+        onRetry = {},
+        onMovieClick = {},
+        onSearchClick = {},
+        onCategoryClick = {},
+        onSeeAllClick = {},
+    )
+}
 
+@Preview(name = "Cinemix - Loading", showBackground = true)
 @Composable
-private fun PosterTexture(modifier: Modifier = Modifier) = Box(
-    modifier.drawWithCache {
-        val circles = listOf(
-            Offset(size.width * .20f, size.height * .24f) to size.minDimension * .23f,
-            Offset(size.width * .78f, size.height * .64f) to size.minDimension * .29f,
-        )
-        onDrawBehind {
-            circles.forEach { (center, radius) ->
-                drawCircle(
-                    Color.White.copy(.07f), radius, center
-                )
-            }
-        }
-    },
-)
-
-@Preview()
-@Composable
-private fun CinemixContentPreview() {
-    CinemixContent(title = "Cinemix")
+private fun CinemixLoadingPreview() = PreviewTheme {
+    CinemixContent(CinemixUiState(), {}, {}, {}, {}, {})
 }

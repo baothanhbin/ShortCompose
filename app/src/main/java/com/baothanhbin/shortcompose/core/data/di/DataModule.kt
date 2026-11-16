@@ -6,6 +6,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import com.baothanhbin.shortcompose.core.data.impl.AppRepositoryImpl
 import com.baothanhbin.shortcompose.core.data.repository.AppRepository
+import com.baothanhbin.shortcompose.core.data.impl.MovieRepositoryImpl
+import com.baothanhbin.shortcompose.core.data.repository.MovieRepository
 import javax.inject.Singleton
 
 @Module
@@ -16,4 +18,8 @@ abstract class DataModule {
     abstract fun bindAppRepository(
         impl: AppRepositoryImpl,
     ): AppRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMovieRepository(impl: MovieRepositoryImpl): MovieRepository
 }

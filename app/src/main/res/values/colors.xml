@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Legacy ASD113 drawable palette. -->
+    <color name="chill_green_5">#081400</color>
+    <color name="player_red_70_tranference">#CC3C8B00</color>
+    <color name="quantum_purple_primary_95">#F7EEFF</color>
+    <color name="player_red_70">#EA7171</color>
 </resources>

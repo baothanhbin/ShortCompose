@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Màu nền đỏ nâu sẫm đậm hơn và bớt trong suốt hơn (độ đục ~85%) -->
+    <solid android:color="#D92A0E0E" />
+
+    <!-- Độ bo góc -->
+    <corners android:radius="100dp" />
+
+    <!-- Viền mỏng nổi bật mép -->
+    <stroke
+        android:width="1dp"
+        android:color="#4A1C1C" />
+
+</shape>

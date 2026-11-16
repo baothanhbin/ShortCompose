@@ -7,7 +7,7 @@ import com.baothanhbin.shortcompose.core.theme.SingleModuleStarterTheme
 fun AppUiProviders(
     content: @Composable () -> Unit,
 ) {
-    SingleModuleStarterTheme {
+    SingleModuleStarterTheme(useDarkTheme = true, useDynamicColor = false) {
         content()
     }
 }

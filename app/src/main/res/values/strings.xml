@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ShortCompose</string>
+    <string name="app_name">Short Compose</string>
     <string name="shell_title">App Shell</string>
     <string name="shell_loading">Preparing app...</string>
     <string name="generic_back">Back</string>
@@ -11,4 +11,114 @@
     <string name="feature_playlist_description">This starter screen belongs to the Playlist feature inside the single app module.</string>
     <string name="feature_settings_title">Settings</string>
     <string name="feature_settings_description">This starter screen belongs to the Settings feature inside the single app module.</string>
+
+    <string name="action_about">About</string>
+    <string name="action_back">Back</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_favorite">Favorite</string>
+    <string name="action_language">Language</string>
+    <string name="action_next">Next</string>
+    <string name="action_no">No</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_play">Play</string>
+    <string name="action_play_now">Play now</string>
+    <string name="action_rate_us">Rate us</string>
+    <string name="action_search">Search</string>
+    <string name="action_see_all">See all</string>
+    <string name="action_share">Share</string>
+    <string name="action_skip_continue">Skip and continue</string>
+    <string name="action_thank_you">Thank you</string>
+    <string name="action_try_again">Try again</string>
+    <string name="action_watch_now">Watch now</string>
+    <string name="action_yes">Yes</string>
+
+    <string name="exit_title">Exit Cinemix?</string>
+    <string name="exit_message">Are you sure you want to quit the app?</string>
+
+    <string name="language_choose_title">Choose language</string>
+    <string name="language_choose_message">Please select a language to continue</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Deutsch</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_hindi">हिन्दी</string>
+    <string name="language_japanese">日本語</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_russian">Русский</string>
+
+    <string name="intro_title_one">A universe of short dramas</string>
+    <string name="intro_title_two">Swipe into every story</string>
+    <string name="intro_title_three">Keep your favorites close</string>
+    <string name="intro_message_one">Discover stories selected just for you.</string>
+    <string name="intro_message_two">Watch full-screen episodes anywhere, anytime.</string>
+    <string name="intro_message_three">Save and continue exactly where you stopped.</string>
+
+    <string name="permission_title">Permission</string>
+    <string name="permission_notification">Notification permission</string>
+    <string name="permission_message">Turn on notifications so you never miss new episodes.</string>
+    <string name="permission_denied_message">Enable notifications in app settings, or continue without them.</string>
+    <string name="permission_agree_continue">Agree and continue</string>
+
+    <string name="age_confirmation_title">Age confirmation</string>
+    <string name="age_confirmation_message">Are you 18 years old or older?</string>
+    <string name="age_confirmation_yes">Yes, I am 18+</string>
+    <string name="age_restriction_title">Age-restricted content</string>
+    <string name="age_restriction_message">Cinemix is intended for viewers aged 18 and older.</string>
+
+    <string name="cinemix_feel_the_vibes">Feel the vibes</string>
+    <string name="cinemix_trending_now">Trending now</string>
+    <string name="cinemix_new_releases">New releases</string>
+    <string name="cinemix_spotlight">Spotlight</string>
+    <string name="cinemix_for_you">For you</string>
+    <string name="cinemix_editors_choice">EDITOR\'S CHOICE</string>
+
+    <string name="playlist_recently_watched">Recently watched</string>
+    <string name="playlist_favorites">Favorites</string>
+    <string name="playlist_empty_title">No movies yet</string>
+    <string name="playlist_empty_message">Movies you watch or save will appear here.</string>
+
+    <string name="search_title">Search</string>
+    <string name="search_hint">Search short dramas</string>
+    <string name="search_empty_title">No movies found</string>
+    <string name="search_empty_message">Try another title or keyword.</string>
+    <string name="category_romance">Romance</string>
+
+    <string name="offline_screen_title">No internet</string>
+    <string name="offline_title">You are offline</string>
+    <string name="offline_message">Check your connection and try again.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_share_chooser">Share Cinemix</string>
+    <string name="rating_title">Your opinion matters to us</string>
+    <string name="rating_message">Would you mind rating us on Google Play?</string>
+    <string name="about_subtitle">Short Drama Stories</string>
+    <string name="about_version">Version 1.0</string>
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_preview">Privacy policy web content</string>
+
+    <string name="player_video_preview">Video preview</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_episode">Episode %1$d</string>
+    <string name="player_episode_progress">Episode %1$d/%2$d</string>
+    <string name="player_speed">Playback speed</string>
+    <string name="player_quality">Video quality</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_episodes">Episodes</string>
+    <string name="player_subtitles_off">Off</string>
+    <string name="player_locked">Locked</string>
+    <string name="player_error_playback">Playback error</string>
+    <string name="player_error_load">Unable to load episodes</string>
+    <string name="player_speed_1">1.0×</string>
+    <string name="player_speed_125">1.25×</string>
+    <string name="player_speed_15">1.5×</string>
+    <string name="player_speed_2">2.0×</string>
+    <string name="player_quality_1440">1440p</string>
+    <string name="player_quality_1080">1080p</string>
+    <string name="player_quality_720">720p</string>
+    <string name="player_quality_540">540p</string>
+    <string name="player_quality_360">360p</string>
+    <string name="movie_error_load">Unable to load movies</string>
+    <string name="movie_error_search">Search failed</string>
 </resources>

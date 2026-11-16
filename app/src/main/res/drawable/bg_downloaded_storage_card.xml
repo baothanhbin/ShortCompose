@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Subtle Shadow Layer -->
+    <item
+        android:top="2dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:bottom="2dp">
+        <shape>
+            <corners android:radius="20dp" />
+            <solid android:color="#20000000" />
+        </shape>
+    </item>
+
+    <!-- Dark Glass Card Surface -->
+    <item>
+        <shape>
+            <!-- Dark semi-transparent gradient with subtle top lighting -->
+            <gradient
+                android:angle="270"
+                android:startColor="#2A1B181A"
+                android:centerColor="#20120E10"
+                android:endColor="#280D090B" />
+
+            <!-- Thin subtle border rim -->
+            <stroke
+                android:width="1dp"
+                android:color="#22FFFFFF" />
+
+            <!-- Rounded corners -->
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+
+</layer-list>

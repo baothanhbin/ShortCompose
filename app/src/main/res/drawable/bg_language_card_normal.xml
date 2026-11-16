@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- LỚP DƯỚI: Nền Gradient làm viền -->
+    <item>
+        <shape android:shape="rectangle">
+
+            <!-- Màu gradient cho viền -->
+            <gradient
+                android:angle="270"
+                android:endColor="#413131"
+                android:startColor="#170303" />
+            <!-- Bo góc cho viền ngoài -->
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+
+    <!-- LỚP TRÊN: Nền chính (thụi vào mỗi bên 1dp tương ứng với độ rộng của viền) -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <!-- Màu nền bên trong -->
+            <solid android:color="#100102" />
+            <!-- Bo góc trong (trừ đi 1dp của viền để góc bo khớp đều) -->
+            <corners android:radius="15dp" />
+        </shape>
+    </item>
+
+</layer-list>

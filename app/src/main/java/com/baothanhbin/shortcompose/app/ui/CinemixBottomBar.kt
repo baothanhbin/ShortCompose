@@ -1,6 +1,5 @@
 package com.baothanhbin.shortcompose.app.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.app.navigation.TopLevelDestination
+import com.baothanhbin.shortcompose.core.ui.asdTap
+import androidx.compose.ui.tooling.preview.Preview
+import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 
 private val SelectedColor = Color(0xFFEA7B71)
 private val SelectedTabShape = RoundedCornerShape(16.dp)
@@ -41,7 +42,6 @@ fun CinemixBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -107,7 +107,7 @@ private fun TopBarTab(
             .width(if (selected) 113.dp else 80.dp)
             .height(if (selected) 52.dp else 48.dp)
             .clip(SelectedTabShape)
-            .clickable { onClick(destination) },
+            .asdTap { onClick(destination) },
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {
@@ -144,4 +144,10 @@ private fun TopBarTab(
             }
         }
     }
+}
+
+@Preview(name = "Bottom navigation", showBackground = true)
+@Composable
+private fun CinemixBottomBarPreview() = PreviewTheme {
+    CinemixBottomBar(selectedDestination = TopLevelDestination.CINEMIX, onDestinationClick = {})
 }
