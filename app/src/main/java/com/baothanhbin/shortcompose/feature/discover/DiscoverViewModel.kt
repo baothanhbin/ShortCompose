@@ -10,7 +10,6 @@ import com.baothanhbin.shortcompose.core.model.Movie
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,18 +23,14 @@ data class MovieListUiState(
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(private val repository: MovieRepository) : ViewModel() {
-    private val _query = MutableStateFlow("")
-    val query = _query.asStateFlow()
     private val _state = MutableStateFlow(MovieListUiState())
     val state = _state.asStateFlow()
     private var searchJob: Job? = null
 
     init { search("") }
-    fun setQuery(value: String) { _query.value = value; search(value) }
-    private fun search(value: String) {
+    fun search(value: String) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            if (value.isNotBlank()) delay(400)
             _state.value = _state.value.copy(loading = true, error = null)
             runCatching { repository.searchMovies(value.trim()) }
                 .onSuccess { _state.value = MovieListUiState(false, it) }

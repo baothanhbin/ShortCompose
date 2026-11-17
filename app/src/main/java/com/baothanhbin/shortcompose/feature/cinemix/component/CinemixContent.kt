@@ -14,13 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -140,58 +141,43 @@ private fun HomeContent(
         .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
 ) {
     TopBar(onSearchClick)
-    LazyColumn(
+    Column(
         modifier = Modifier
             .weight(1f)
-            .padding(top = 16.dp),
+            .padding(top = 16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (content.banners.isNotEmpty()) {
-            item(key = "banners") {
-                BannerPager(
-                    movies = content.banners,
-                    onMovieClick = onMovieClick,
-                    onFavoriteClick = onFavoriteClick,
-                )
+            BannerPager(content.banners, onMovieClick, onFavoriteClick)
+        }
+        SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(content.categories, key = { it.queryName }) { category ->
+                Text(
+                    category.name,
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .Tap { onCategoryClick(category.queryName) }
+                        .drawableBackground(R.drawable.bg_cinemix_chip)
+                        .padding(horizontal = 16.dp, vertical = 11.dp))
             }
         }
-        item(key = "categories") {
-            Column {
-                SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(content.categories, key = { it.queryName }) { category ->
-                        Text(
-                            category.name,
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier
-                                .Tap { onCategoryClick(category.queryName) }
-                                .drawableBackground(R.drawable.bg_cinemix_chip)
-                                .padding(horizontal = 16.dp, vertical = 11.dp))
-                    }
-                }
-            }
+        MovieSection(stringResource(R.string.cinemix_trending_now), content.trending, onMovieClick) {
+            onSeeAllClick("trending")
         }
-        item(key = "trending") {
-            MovieSection(stringResource(R.string.cinemix_trending_now), content.trending, onMovieClick) {
-                onSeeAllClick("trending")
-            }
+        MovieSection(stringResource(R.string.cinemix_new_releases), content.newRelease, onMovieClick) {
+            onSeeAllClick("new")
         }
-        item(key = "new_releases") {
-            MovieSection(stringResource(R.string.cinemix_new_releases), content.newRelease, onMovieClick) {
-                onSeeAllClick("new")
-            }
-        }
-        item(key = "spotlight") {
-            MovieSection(stringResource(R.string.cinemix_spotlight), content.spotlight, onMovieClick) {
-                onSeeAllClick("spotlight")
-            }
+        MovieSection(stringResource(R.string.cinemix_spotlight), content.spotlight, onMovieClick) {
+            onSeeAllClick("spotlight")
         }
         content.spotlight.firstOrNull()?.let { movie ->
-            item(key = "editor_choice") { EditorChoice(movie) { onMovieClick(movie.id) } }
+            EditorChoice(movie) { onMovieClick(movie.id) }
         }
     }
 }

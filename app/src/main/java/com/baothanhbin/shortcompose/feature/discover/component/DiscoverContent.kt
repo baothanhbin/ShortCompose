@@ -15,12 +15,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,26 +43,36 @@ import com.baothanhbin.shortcompose.core.utils.drawableBackground
 import com.baothanhbin.shortcompose.feature.discover.MovieListUiState
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 import com.baothanhbin.shortcompose.core.ui.preview.previewMovies
+import com.baothanhbin.shortcompose.core.utils.Tap
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
+@OptIn(FlowPreview::class)
 fun SearchContent(
     state: MovieListUiState,
-    query: String,
-    onQueryChange: (String) -> Unit,
+    onQueryChanged: (String) -> Unit,
     onBack: () -> Unit,
     onMovieClick: (Long) -> Unit,
 ) {
+    val searchFieldState = rememberTextFieldState()
+
+    LaunchedEffect(searchFieldState) {
+        snapshotFlow { searchFieldState.text.toString() }
+            .distinctUntilChanged()
+            .debounce(400)
+            .collect(onQueryChanged)
+    }
+
     MovieGridContent(
-        title = stringResource(R.string.search_title), state = state, onBack = onBack, onMovieClick = onMovieClick,
-        header = {
-            OutlinedTextField(
-                value = query, onValueChange = onQueryChange, singleLine = true,
-                placeholder = { Text(stringResource(R.string.search_hint)) },
-                leadingIcon = { Image(painterResource(R.drawable.ic_search), null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .drawableBackground(if (query.isBlank()) R.drawable.bg_search_field else R.drawable.bg_search_field_active),
+        state = state,
+        onBack = onBack,
+        onMovieClick = onMovieClick,
+        topBar = {
+            SearchTopBar(
+                searchFieldState = searchFieldState,
+                onBack = onBack,
             )
         },
     )
@@ -64,31 +80,19 @@ fun SearchContent(
 
 @Composable
 fun MovieGridContent(
-    title: String,
     state: MovieListUiState,
     onBack: () -> Unit,
     onMovieClick: (Long) -> Unit,
-    header: @Composable () -> Unit = {},
+    title: String = "",
+    topBar: @Composable (() -> Unit)? = null,
 ) = Column(
     Modifier
         .fillMaxSize()
         .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, start = 12.dp, end = 12.dp)
-            .height(64.dp)
-            .paint(
-                painterResource(R.drawable.bg_top_search), contentScale = ContentScale.FillBounds
-            ), verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBack) {
-            Image(painterResource(R.drawable.iv_back), stringResource(R.string.action_back))
-        }
-        Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium)
-    }
-    header()
+    (topBar ?: {
+        CategoryTopBar(title = title, onBack = onBack)
+    })()
     Box(
         Modifier
             .weight(1f)
@@ -113,7 +117,9 @@ fun MovieGridContent(
             }
 
             state.error != null || state.errorRes != null -> Text(
-                state.error ?: stringResource(state.errorRes!!), color = Color.White, modifier = Modifier.align(Alignment.Center)
+                state.error ?: stringResource(state.errorRes!!),
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center)
             )
 
             state.movies.isEmpty() -> Column(
@@ -148,13 +154,92 @@ fun MovieGridContent(
     }
 }
 
+@Composable
+private fun CategoryTopBar(title: String, onBack: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 35.dp, start = 12.dp, end = 12.dp)
+            .height(64.dp)
+            .paint(
+                painterResource(R.drawable.bg_top_search), contentScale = ContentScale.FillBounds
+            ), verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(R.drawable.iv_back),
+            contentDescription = stringResource(R.string.action_back),
+            modifier = Modifier
+                .padding(start = 8.dp) // Đặt padding TRƯỚC size để không bóp ảnh
+                .size(48.dp)          // Chỉnh kích thước vòng tròn to/nhỏ tùy ý tại đây
+                .clip(CircleShape)
+                .Tap(onClick = onBack),
+            contentScale = ContentScale.Fit
+        )
+        Text(
+            title,
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+    }
+}
+
+@Composable
+private fun SearchTopBar(
+    searchFieldState: TextFieldState,
+    onBack: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 35.dp, start = 12.dp, end = 12.dp)
+            // TextField is 56dp high and has 8dp outer padding on each side.
+            // The parent must reserve 72dp; otherwise Row constrains and clips it.
+            .height(72.dp)
+            .paint(
+                painterResource(R.drawable.bg_top_search), contentScale = ContentScale.FillBounds
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.iv_back),
+            contentDescription = stringResource(R.string.action_back),
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .size(48.dp)
+                .clip(CircleShape)
+                .Tap(onClick = onBack),
+            contentScale = ContentScale.Fit,
+        )
+        OutlinedTextField(
+            state = searchFieldState,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            placeholder = { Text(stringResource(R.string.search_title)) },
+            trailingIcon = { Image(painterResource(R.drawable.ic_search), null) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedPlaceholderColor = Color.White.copy(alpha = .45f),
+                unfocusedPlaceholderColor = Color.White.copy(alpha = .45f),
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                cursorColor = Color.White,
+            ),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp)
+                .height(56.dp)
+                .drawableBackground(R.drawable.bg_search_field),
+        )
+    }
+}
+
 @Preview(name = "Search", showBackground = true, showSystemUi = true)
 @Composable
 private fun SearchContentPreview() = PreviewTheme {
     SearchContent(
         state = MovieListUiState(loading = false, movies = previewMovies),
-        query = "love",
-        onQueryChange = {},
+        onQueryChanged = {},
         onBack = {},
         onMovieClick = {},
     )

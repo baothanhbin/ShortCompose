@@ -15,8 +15,7 @@ fun SearchRoute(
 ) {
     SearchContent(
         state = viewModel.state.collectAsStateWithLifecycle().value,
-        query = viewModel.query.collectAsStateWithLifecycle().value,
-        onQueryChange = viewModel::setQuery,
+        onQueryChanged = viewModel::search,
         onBack = onBack,
         onMovieClick = onMovieClick,
     )
