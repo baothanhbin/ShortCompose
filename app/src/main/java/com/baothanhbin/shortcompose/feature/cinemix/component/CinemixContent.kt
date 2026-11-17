@@ -20,10 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,10 +85,30 @@ fun CinemixContent(
     Box(
         Modifier
             .fillMaxSize()
-            .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
+            // Do not draw the red/white skeleton during loading. It causes a
+            // noticeable flash when returning from a full-screen player.
+            .background(Background)
     ) {
         when {
-            state.isLoading -> HomeSkeleton()
+            // Keep already loaded content visible while a refresh happens in
+            // the background. Replacing it with a skeleton makes navigation
+            // look like a reload and adds unnecessary composition work.
+            state.content != null -> HomeContent(
+                content = state.content,
+                onMovieClick = onMovieClick,
+                onFavoriteClick = onFavoriteClick,
+                onSearchClick = onSearchClick,
+                onCategoryClick = onCategoryClick,
+                onSeeAllClick = onSeeAllClick,
+            )
+
+            state.isLoading -> CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(32.dp),
+                color = Color.White.copy(alpha = 0.7f),
+                trackColor = Color.White.copy(alpha = 0.14f),
+            )
             state.error != null || state.errorRes != null -> Column(
                 Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -103,120 +122,76 @@ fun CinemixContent(
                 )
             }
 
-            state.content != null -> Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                TopBar(onSearchClick)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (state.content.banners.isNotEmpty()) {
-                        BannerPager(
-                            movies = state.content.banners,
-                            onMovieClick = onMovieClick,
-                            onFavoriteClick = onFavoriteClick,
-                        )
-                    }
-
-                    SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.content.categories, key = { it.queryName }) { category ->
-                            Text(
-                                category.name,
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier
-                                    .Tap { onCategoryClick(category.queryName) }
-                                    .drawableBackground(R.drawable.bg_cinemix_chip)
-                                    .padding(horizontal = 16.dp, vertical = 11.dp))
-                        }
-                    }
-
-                    MovieSection(
-                        stringResource(R.string.cinemix_trending_now),
-                        state.content.trending,
-                        onMovieClick
-                    ) { onSeeAllClick("trending") }
-
-
-                    MovieSection(
-                        stringResource(R.string.cinemix_new_releases),
-                        state.content.newRelease,
-                        onMovieClick
-                    ) { onSeeAllClick("new") }
-
-
-                    MovieSection(
-                        stringResource(R.string.cinemix_spotlight),
-                        state.content.spotlight,
-                        onMovieClick
-                    ) { onSeeAllClick("spotlight") }
-
-                    state.content.spotlight.firstOrNull()
-                        ?.let { movie -> EditorChoice(movie) { onMovieClick(movie.id) } }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun HomeSkeleton() = LazyColumn(
-    modifier = Modifier.fillMaxSize(),
-    contentPadding = PaddingValues(bottom = 112.dp),
-    verticalArrangement = Arrangement.spacedBy(18.dp),
+private fun HomeContent(
+    content: com.baothanhbin.shortcompose.core.model.HomeContent,
+    onMovieClick: (Long) -> Unit,
+    onFavoriteClick: (Movie) -> Unit,
+    onSearchClick: () -> Unit,
+    onCategoryClick: (String) -> Unit,
+    onSeeAllClick: (String) -> Unit,
+) = Column(
+    modifier = Modifier
+        .fillMaxSize()
+        .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
 ) {
-    item {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 35.dp)
-                .height(64.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White.copy(.09f))
-        )
-    }
-    item {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .height(220.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White.copy(.09f))
-        )
-    }
-    items(3) {
-        Column {
-            Box(
-                Modifier
-                    .padding(horizontal = 16.dp)
-                    .width(160.dp)
-                    .height(24.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(.09f))
-            )
-            Row(
-                Modifier.padding(top = 14.dp, start = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                repeat(3) {
-                    Box(
-                        Modifier
-                            .width(126.dp)
-                            .height(184.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White.copy(.09f))
-                    )
+    TopBar(onSearchClick)
+    LazyColumn(
+        modifier = Modifier
+            .weight(1f)
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (content.banners.isNotEmpty()) {
+            item(key = "banners") {
+                BannerPager(
+                    movies = content.banners,
+                    onMovieClick = onMovieClick,
+                    onFavoriteClick = onFavoriteClick,
+                )
+            }
+        }
+        item(key = "categories") {
+            Column {
+                SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(content.categories, key = { it.queryName }) { category ->
+                        Text(
+                            category.name,
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier
+                                .Tap { onCategoryClick(category.queryName) }
+                                .drawableBackground(R.drawable.bg_cinemix_chip)
+                                .padding(horizontal = 16.dp, vertical = 11.dp))
+                    }
                 }
             }
+        }
+        item(key = "trending") {
+            MovieSection(stringResource(R.string.cinemix_trending_now), content.trending, onMovieClick) {
+                onSeeAllClick("trending")
+            }
+        }
+        item(key = "new_releases") {
+            MovieSection(stringResource(R.string.cinemix_new_releases), content.newRelease, onMovieClick) {
+                onSeeAllClick("new")
+            }
+        }
+        item(key = "spotlight") {
+            MovieSection(stringResource(R.string.cinemix_spotlight), content.spotlight, onMovieClick) {
+                onSeeAllClick("spotlight")
+            }
+        }
+        content.spotlight.firstOrNull()?.let { movie ->
+            item(key = "editor_choice") { EditorChoice(movie) { onMovieClick(movie.id) } }
         }
     }
 }

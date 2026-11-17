@@ -4,9 +4,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.paint
@@ -16,7 +17,12 @@ import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.core.utils.drawableBackground
 import com.baothanhbin.shortcompose.core.utils.Tap
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -96,31 +102,27 @@ fun MainApp(
             }
         }
     }
-    Scaffold(
-        // Screens render underneath the floating glass nav, just like the XML ViewPager.
-        // Without this, Scaffold's default light surface is visible through the glass.
-        containerColor = Color(0xFF130A0B),
-        contentColor = Color.White,
-        // Every destination owns its spacing. Do not push the NavHost below the
-        // status bar: backgrounds and splash artwork must render edge-to-edge.
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (isTopLevel) {
-            CinemixBottomBar(
-                selectedDestination = selectedDestination,
-                onDestinationClick = { selectedDestination = it },
-            )
-            }
-        },
-    ) { innerPadding ->
+    // Keep the NavHost at a constant size. Adding/removing Scaffold's bottom bar
+    // during pop changes the host bounds and interrupts its back transition.
+    Box(Modifier.fillMaxSize().background(Color(0xFF130A0B))) {
         MainNavHost(
             navController = appState.navController,
             selectedDestination = selectedDestination,
             isAppReady = uiState.isReady,
             onOnboardingComplete = viewModel::completeOnboarding,
-            modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding()),
+            modifier = Modifier.fillMaxSize(),
         )
+        AnimatedVisibility(
+            visible = isTopLevel,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = fadeIn(tween(180)) + slideInVertically(tween(220)) { it / 2 },
+            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { it / 2 },
+        ) {
+            CinemixBottomBar(
+                selectedDestination = selectedDestination,
+                onDestinationClick = { selectedDestination = it },
+            )
+        }
     }
 }
 

@@ -1,10 +1,14 @@
-@file:androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-
-package com.baothanhbin.shortcompose.feature.player.component
+package com.baothanhbin.shortcompose.feature.video_player.component
 
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.util.Log
+import android.view.LayoutInflater
 import android.widget.SeekBar
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,23 +57,24 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.core.model.Episode
 import com.baothanhbin.shortcompose.core.utils.drawableBackground
 import com.baothanhbin.shortcompose.core.utils.Tap
-import com.baothanhbin.shortcompose.feature.player.PlayerUiState
-import com.baothanhbin.shortcompose.feature.player.VideoCache
+import com.baothanhbin.shortcompose.core.utils.TapImmediately
+import com.baothanhbin.shortcompose.feature.video_player.PlayerUiState
+import com.baothanhbin.shortcompose.feature.video_player.VideoCache
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 import com.baothanhbin.shortcompose.core.ui.preview.previewEpisodes
 import com.baothanhbin.shortcompose.core.ui.preview.previewMovies
 import kotlinx.coroutines.delay
 
 private enum class ControlMode { DEFAULT, SPEED, QUALITY, SUBTITLE, EPISODES }
+
+private const val PLAYER_PERF_TAG = "VideoPlayerPerf"
 
 @Composable
 fun PlayerContent(
@@ -85,6 +90,7 @@ fun PlayerContent(
         .background(Color.Black)
 ) {
     val inspectionMode = LocalInspectionMode.current
+    var playerBuffering by remember(state.episode?.id) { mutableStateOf(true) }
     when {
         inspectionMode && state.episode != null -> PlayerPreviewSurface(
             state = state,
@@ -93,9 +99,7 @@ fun PlayerContent(
             onEpisode = onEpisode,
         )
 
-        state.loading -> CircularProgressIndicator(
-            Modifier.align(Alignment.Center), color = Color(0xFFEA7B71)
-        )
+        state.loading -> Unit
 
         state.error != null || state.errorRes != null -> Column(
             Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally
@@ -111,7 +115,17 @@ fun PlayerContent(
         }
 
         state.episode != null -> EpisodeFeed(
-            state, onBack, onEpisode, onFavorite, onWatched, onSaveProgress
+            state, onBack, onEpisode, onFavorite, onWatched, onSaveProgress,
+            onBufferingChanged = { playerBuffering = it },
+        )
+    }
+    // One continuous loader: it begins while metadata loads and stays visible
+    // through ExoPlayer's initial buffering instead of showing two spinners.
+    if (state.loading || (state.episode != null && playerBuffering)) {
+        CircularProgressIndicator(
+            Modifier.align(Alignment.Center),
+            color = Color.White.copy(alpha = 0.7f),
+            trackColor = Color.White.copy(alpha = 0.14f),
         )
     }
 }
@@ -122,7 +136,11 @@ private fun PlayerPreviewSurface(
     onBack: () -> Unit,
     onFavorite: () -> Unit,
     onEpisode: (Int) -> Unit,
-) = Box(Modifier.fillMaxSize().background(Color(0xFF251719))) {
+) = Box(
+    Modifier
+        .fillMaxSize()
+        .background(Color(0xFF251719))
+) {
     Text(
         stringResource(R.string.player_video_preview),
         color = Color.White.copy(alpha = .35f),
@@ -154,6 +172,7 @@ private fun EpisodeFeed(
     onFavorite: () -> Unit,
     onWatched: () -> Unit,
     onSaveProgress: (Long, Long) -> Unit,
+    onBufferingChanged: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val pool = remember { PlayerPool(context) }
@@ -166,7 +185,36 @@ private fun EpisodeFeed(
     var error by remember { mutableStateOf<String?>(null) }
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
+    var exitRequested by remember { mutableStateOf(false) }
     val playbackErrorText = stringResource(R.string.player_error_playback)
+    val requestBack: (String) -> Unit = remember(pool, onBack) {
+        back@{ source ->
+            if (exitRequested) return@back
+            exitRequested = true
+            // Match ASD113: pause playback before leaving, but defer surface
+            // teardown until after the transition so MediaCodec work cannot
+            // jank the first frame of the back animation.
+            val requestedAt = SystemClock.elapsedRealtime()
+            Log.d(PLAYER_PERF_TAG, "back[$source] requested at ${requestedAt}ms")
+            pool.pauseForExit()
+            Log.d(
+                PLAYER_PERF_TAG,
+                "back[$source] calling popBackStack after ${SystemClock.elapsedRealtime() - requestedAt}ms",
+            )
+            onBack()
+            Log.d(
+                PLAYER_PERF_TAG,
+                "back[$source] popBackStack returned after ${SystemClock.elapsedRealtime() - requestedAt}ms",
+            )
+            // NavHost can retain the outgoing composable beyond its visual
+            // transition. Start the safe release timer here rather than waiting
+            // for DisposableEffect.onDispose (which can arrive much later).
+            onSaveProgress(position, duration)
+            pool.releaseAfterNavigation()
+        }
+    }
+
+    BackHandler { requestBack("system") }
 
     DisposableEffect(currentPlayer) {
         val listener = object : Player.Listener {
@@ -184,16 +232,19 @@ private fun EpisodeFeed(
             }
 
             override fun onPlayerError(playbackError: PlaybackException) {
-                error = playbackError.message ?: playbackErrorText; controlsVisible = true
+                error = playbackError.message ?: playbackErrorText
+                buffering = false
+                controlsVisible = true
             }
         }
         currentPlayer.addListener(listener)
         onDispose {
-            currentPlayer.removeListener(listener); onSaveProgress(
-            currentPlayer.currentPosition.coerceAtLeast(
-                0
-            ), currentPlayer.duration.coerceAtLeast(0)
-        ); pool.release()
+            Log.d(PLAYER_PERF_TAG, "EpisodeFeed disposed at ${SystemClock.elapsedRealtime()}ms")
+            currentPlayer.removeListener(listener)
+            if (!exitRequested) {
+                onSaveProgress(position, duration)
+                pool.releaseAfterNavigation()
+            }
         }
     }
 
@@ -224,16 +275,21 @@ private fun EpisodeFeed(
             controlsVisible = false
         }
     }
+    LaunchedEffect(buffering) { onBufferingChanged(buffering) }
 
     Box(Modifier.fillMaxSize()) {
         VerticalPager(
-            state = pager, beyondViewportPageCount = 1, userScrollEnabled = state.episodes.size > 1
+            // There is only one player and no adjacent-page preloading. Keeping
+            // off-screen AndroidViews alive adds TextureView composition work with
+            // no playback benefit, especially while navigating away.
+            state = pager, beyondViewportPageCount = 0, userScrollEnabled = state.episodes.size > 1
         ) { page ->
             AndroidView(
-                factory = {
-                    PlayerView(it).apply {
-                        useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                    }
+                // TextureView is composited with Compose. Unlike SurfaceView,
+                // it follows the NavHost slide/fade during back navigation.
+                factory = { context ->
+                    LayoutInflater.from(context)
+                        .inflate(R.layout.view_player_texture, null, false) as PlayerView
                 },
                 update = {
                     it.player = pool.playerFor(page, state.selectedIndex)
@@ -247,13 +303,8 @@ private fun EpisodeFeed(
             )
         }
         if (controlsVisible) {
-            PlayerTopBar(state, onBack, onFavorite)
-            if (buffering) CircularProgressIndicator(
-                Modifier
-                    .align(Alignment.Center)
-                    .size(48.dp), color = Color.White
-            )
-            else Box(
+            PlayerTopBar(state, { requestBack("top_bar") }, onFavorite)
+            if (!buffering) Box(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(64.dp)
@@ -312,8 +363,8 @@ private fun PlayerTopBar(state: PlayerUiState, onBack: () -> Unit, onFavorite: (
     Box(
         Modifier
             .size(48.dp)
-            .drawableBackground(R.drawable.bg_player_button_16)
-            .Tap(onClick = onBack),
+            .TapImmediately(onClick = onBack)
+            .drawableBackground(R.drawable.bg_player_button_16),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -336,16 +387,16 @@ private fun PlayerTopBar(state: PlayerUiState, onBack: () -> Unit, onFavorite: (
             maxLines = 1
         )
         Text(
-            stringResource(R.string.player_episode_progress, state.episode?.number ?: 0, state.episodes.size),
-            color = Color.White.copy(.7f),
-            style = MaterialTheme.typography.labelMedium
+            stringResource(
+                R.string.player_episode_progress, state.episode?.number ?: 0, state.episodes.size
+            ), color = Color.White.copy(.7f), style = MaterialTheme.typography.labelMedium
         )
     }
     Box(
         Modifier
             .size(48.dp)
-            .drawableBackground(R.drawable.bg_player_button_16)
-            .Tap(onClick = onFavorite),
+            .Tap(onClick = onFavorite)
+            .drawableBackground(R.drawable.bg_player_button_16),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -388,9 +439,6 @@ private fun PlayerBottomPanel(
                 modifier = Modifier.weight(1f)
             )
             ControlButton(
-                R.drawable.ic_player_speed, stringResource(R.string.player_speed)
-            ) { onMode(ControlMode.SPEED) }
-            ControlButton(
                 R.drawable.ic_player_tune, stringResource(R.string.player_quality)
             ) { onMode(ControlMode.QUALITY) }
             ControlButton(
@@ -398,6 +446,9 @@ private fun PlayerBottomPanel(
                 stringResource(R.string.player_subtitles),
                 enabled = state.episode?.subtitles?.isNotEmpty() == true
             ) { onMode(ControlMode.SUBTITLE) }
+            ControlButton(
+                R.drawable.ic_player_speed, stringResource(R.string.player_speed)
+            ) { onMode(ControlMode.SPEED) }
             ControlButton(
                 R.drawable.ic_player_episode_list, stringResource(R.string.player_episodes)
             ) { onMode(ControlMode.EPISODES) }
@@ -563,41 +614,66 @@ private fun Episode?.orEmptySubtitles() = this?.subtitles.orEmpty()
 private class PlayerPool(context: Context) {
     private val mediaSourceFactory =
         DefaultMediaSourceFactory(VideoCache.dataSourceFactory(context))
-    private val loadControl =
-        DefaultLoadControl.Builder().setBufferDurationsMs(15_000, 50_000, 500, 1_000).build()
-    private val players = List(3) {
-        ExoPlayer.Builder(context).setMediaSourceFactory(mediaSourceFactory)
-            .setLoadControl(loadControl).build()
-    }
-    val current: ExoPlayer get() = players[0]
+    private val player =
+        ExoPlayer.Builder(context).setMediaSourceFactory(mediaSourceFactory).build()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var releaseScheduled = false
+    val current: ExoPlayer get() = player
 
     fun activate(index: Int, episodes: List<Episode>, resumePositionMs: Long) {
-        prepare(players[0], episodes.getOrNull(index), resumePositionMs, play = true, volume = 1f)
-        prepare(players[1], episodes.getOrNull(index + 1), 0, play = false, volume = 0f)
-        prepare(players[2], episodes.getOrNull(index - 1), 0, play = false, volume = 0f)
+        prepare(player, episodes.getOrNull(index), resumePositionMs, play = true)
     }
 
     fun playerFor(page: Int, currentIndex: Int): ExoPlayer? = when (page) {
-        currentIndex -> players[0]
-        currentIndex + 1 -> players[1]
-        currentIndex - 1 -> players[2]
+        currentIndex -> player
         else -> null
     }
 
     private fun prepare(
-        player: ExoPlayer, episode: Episode?, position: Long, play: Boolean, volume: Float
+        player: ExoPlayer, episode: Episode?, position: Long, play: Boolean
     ) {
         if (episode == null || episode.isLocked || episode.videoUrl.isBlank()) {
             player.stop(); player.clearMediaItems(); return
         }
-        player.volume = volume
+        player.volume = 1f
         player.setMediaItem(episode.mediaItem())
         player.prepare()
         if (position > 0) player.seekTo(position)
         player.playWhenReady = play
     }
 
-    fun release() = players.forEach(ExoPlayer::release)
+    fun pauseForExit() {
+        val startedAt = SystemClock.elapsedRealtime()
+        player.pause()
+        Log.d(
+            PLAYER_PERF_TAG,
+            "player paused in ${SystemClock.elapsedRealtime() - startedAt}ms; surface teardown deferred",
+        )
+    }
+
+    fun releaseAfterNavigation() {
+        if (releaseScheduled) return
+        releaseScheduled = true
+        // The NavHost can keep its outgoing composition alive for longer than
+        // its 400 ms visual transition. Tie teardown to the back request and
+        // leave a buffer after that transition so MediaCodec.release() cannot
+        // steal frames from the screen the user has returned to.
+        Log.d(PLAYER_PERF_TAG, "player release scheduled in ${PLAYER_RELEASE_DELAY_MS}ms")
+        mainHandler.postDelayed({
+            val startedAt = SystemClock.elapsedRealtime()
+            Log.d(PLAYER_PERF_TAG, "player release started at ${startedAt}ms")
+            player.clearVideoSurface()
+            player.release()
+            Log.d(
+                PLAYER_PERF_TAG,
+                "player release completed in ${SystemClock.elapsedRealtime() - startedAt}ms",
+            )
+        }, PLAYER_RELEASE_DELAY_MS)
+    }
+
+    private companion object {
+        const val PLAYER_RELEASE_DELAY_MS = 700L
+    }
 }
 
 private fun Episode.mediaItem(): MediaItem =

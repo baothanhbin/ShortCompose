@@ -11,7 +11,11 @@ import com.baothanhbin.shortcompose.feature.cinemix.CinemixRoute
 import com.baothanhbin.shortcompose.feature.playlist.PlaylistRoute
 import com.baothanhbin.shortcompose.feature.settings.SettingsRoute
 
-/** Keeps all three primary screens composed, matching ASD113's offscreenPageLimit = 2. */
+/**
+ * The active tab is the only one that needs composition. Keeping the other two
+ * screens alive makes returning from the full-screen player synchronously build
+ * three destinations on the main thread.
+ */
 @Composable
 fun MainTabsContent(
     selectedDestination: TopLevelDestination,
@@ -36,7 +40,7 @@ fun MainTabsContent(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
         userScrollEnabled = false,
-        beyondViewportPageCount = destinations.lastIndex,
+        beyondViewportPageCount = 0,
         key = { page -> destinations[page].route },
     ) { page ->
         when (destinations[page]) {

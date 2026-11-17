@@ -1,4 +1,4 @@
-package com.baothanhbin.shortcompose.feature.player
+package com.baothanhbin.shortcompose.feature.video_player
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.annotation.StringRes
