@@ -6,6 +6,7 @@ import com.baothanhbin.shortcompose.core.model.Movie
 
 interface MovieRepository {
     suspend fun getHomeContent(language: String = "en"): HomeContent
+    suspend fun refreshHomeContent(language: String = "en"): HomeContent
     suspend fun getMoviesByCategory(category: String, language: String = "en"): List<Movie>
     suspend fun searchMovies(query: String, language: String = "en"): List<Movie>
     suspend fun getTrending(language: String = "en"): List<Movie>

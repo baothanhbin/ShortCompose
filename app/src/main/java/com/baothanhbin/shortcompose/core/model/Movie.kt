@@ -1,5 +1,8 @@
 package com.baothanhbin.shortcompose.core.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Movie(
     val id: Long,
     val title: String,
@@ -15,8 +18,10 @@ data class Movie(
     val totalEpisodeCount: Int = 0,
 )
 
+@Serializable
 data class MovieCategory(val name: String, val queryName: String = name)
 
+@Serializable
 data class HomeContent(
     val banners: List<Movie>,
     val categories: List<MovieCategory>,

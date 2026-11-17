@@ -17,11 +17,29 @@ class LibraryRepository @Inject constructor(private val dao: LibraryDao) {
 
     suspend fun toggleFavorite(movie: Movie, episodeId: Long, currentlyFavorite: Boolean) {
         if (currentlyFavorite) dao.deleteFavorite(episodeId)
-        else dao.insertFavorite(FavoriteEntity(episodeId, movie.id, movie.title, movie.posterUrl))
+        else dao.insertFavorite(
+            FavoriteEntity(
+                episodeId = episodeId,
+                movieId = movie.id,
+                title = movie.title,
+                posterUrl = movie.posterUrl,
+                viewCount = movie.viewCount,
+            )
+        )
     }
 
     suspend fun markWatched(movie: Movie, episodeId: Long, episodeNumber: Int, total: Int) =
-        dao.markWatched(RecentlyWatchedEntity(movie.id, episodeId, movie.title, movie.posterUrl, episodeNumber, total))
+        dao.markWatched(
+            RecentlyWatchedEntity(
+                movieId = movie.id,
+                episodeId = episodeId,
+                title = movie.title,
+                posterUrl = movie.posterUrl,
+                episodeNumber = episodeNumber,
+                totalEpisodeCount = total,
+                viewCount = movie.viewCount,
+            )
+        )
 
     suspend fun getProgress(episodeId: Long) = dao.getProgress(episodeId)
 

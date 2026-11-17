@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.baothanhbin.shortcompose.core.network.NetworkClients
+import com.baothanhbin.shortcompose.core.worker.HomeContentSyncWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -15,6 +16,7 @@ class MainApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         NetworkClients.initialize(this)
+        HomeContentSyncWorker.schedule(this)
     }
 
     override val workManagerConfiguration: Configuration

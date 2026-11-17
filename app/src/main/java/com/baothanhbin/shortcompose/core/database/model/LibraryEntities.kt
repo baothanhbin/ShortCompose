@@ -9,6 +9,7 @@ data class FavoriteEntity(
     val movieId: Long,
     val title: String,
     val posterUrl: String,
+    val viewCount: Long = 0,
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
@@ -20,6 +21,7 @@ data class RecentlyWatchedEntity(
     val posterUrl: String,
     val episodeNumber: Int,
     val totalEpisodeCount: Int,
+    val viewCount: Long = 0,
     val watchedAt: Long = System.currentTimeMillis(),
 )
 

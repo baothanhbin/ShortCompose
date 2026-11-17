@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.app.navigation.TopLevelDestination
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.ui.asdTapImmediately
 import androidx.compose.ui.tooling.preview.Preview
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 
@@ -107,7 +107,7 @@ private fun TopBarTab(
             .width(if (selected) 113.dp else 80.dp)
             .height(if (selected) 52.dp else 48.dp)
             .clip(SelectedTabShape)
-            .asdTap { onClick(destination) },
+            .asdTapImmediately(enabled = !selected) { onClick(destination) },
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {

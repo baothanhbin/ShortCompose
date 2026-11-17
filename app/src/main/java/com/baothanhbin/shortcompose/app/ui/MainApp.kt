@@ -18,25 +18,20 @@ import com.baothanhbin.shortcompose.core.ui.asdTap
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hierarchy
 import com.baothanhbin.shortcompose.app.MainViewModel
+import com.baothanhbin.shortcompose.app.navigation.MAIN_ROUTE
 import com.baothanhbin.shortcompose.app.navigation.MainNavHost
 import com.baothanhbin.shortcompose.app.navigation.TopLevelDestination
 import com.baothanhbin.shortcompose.app.navigation.rememberAppState
-import com.baothanhbin.shortcompose.core.network.rememberNetworkAvailable
-import com.baothanhbin.shortcompose.feature.offline.navigation.OFFLINE_ROUTE
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.material3.MaterialTheme
@@ -52,16 +47,9 @@ fun MainApp(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val appState = rememberAppState()
     val currentDestination = appState.currentDestination()
-    val isTopLevel = TopLevelDestination.entries.any { destination ->
-        currentDestination?.hierarchy?.any { it.route == destination.route } == true
-    }
-    val networkAvailable = rememberNetworkAvailable()
-    LaunchedEffect(networkAvailable, isTopLevel) {
-        if (isTopLevel && !networkAvailable && currentDestination?.route != OFFLINE_ROUTE) {
-            appState.navController.navigate(OFFLINE_ROUTE) { launchSingleTop = true }
-        } else if (networkAvailable && currentDestination?.route == OFFLINE_ROUTE) {
-            appState.navController.popBackStack()
-        }
+    val isTopLevel = currentDestination?.route == MAIN_ROUTE
+    var selectedDestination by rememberSaveable {
+        mutableStateOf(TopLevelDestination.CINEMIX)
     }
     var showExitDialog by remember { mutableStateOf(false) }
     BackHandler(enabled = isTopLevel) { showExitDialog = true }
@@ -109,21 +97,6 @@ fun MainApp(
             }
         }
     }
-    val contentAlpha = remember { Animatable(1f) }
-    var isTabFadeRunning by remember { mutableStateOf(false) }
-    // Mirrors Short's MainActivity: swap tab immediately, then fade the page from .96 to 1.
-    LaunchedEffect(currentDestination?.route, isTopLevel) {
-        if (isTopLevel) {
-            isTabFadeRunning = true
-            contentAlpha.snapTo(0.96f)
-            contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 120))
-            isTabFadeRunning = false
-        } else {
-            isTabFadeRunning = false
-            contentAlpha.snapTo(1f)
-        }
-    }
-
     Scaffold(
         // Screens render underneath the floating glass nav, just like the XML ViewPager.
         // Without this, Scaffold's default light surface is visible through the glass.
@@ -135,27 +108,19 @@ fun MainApp(
         bottomBar = {
             if (isTopLevel) {
             CinemixBottomBar(
-                selectedDestination = TopLevelDestination.entries.firstOrNull { destination ->
-                    currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                } ?: TopLevelDestination.CINEMIX,
-                onDestinationClick = appState::navigateToTopLevelDestination,
+                selectedDestination = selectedDestination,
+                onDestinationClick = { selectedDestination = it },
             )
             }
         },
     ) { innerPadding ->
         MainNavHost(
             navController = appState.navController,
+            selectedDestination = selectedDestination,
             isAppReady = uiState.isReady,
             onOnboardingComplete = viewModel::completeOnboarding,
             modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding())
-                .then(
-                    if (isTabFadeRunning) {
-                        Modifier.graphicsLayer { alpha = contentAlpha.value }
-                    } else {
-                        Modifier
-                    }
-                ),
+                .padding(top = innerPadding.calculateTopPadding()),
         )
     }
 }

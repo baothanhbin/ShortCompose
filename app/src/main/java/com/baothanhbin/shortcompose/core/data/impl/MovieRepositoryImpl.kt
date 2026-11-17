@@ -1,6 +1,8 @@
 package com.baothanhbin.shortcompose.core.data.impl
 
 import com.baothanhbin.shortcompose.core.data.repository.MovieRepository
+import com.baothanhbin.shortcompose.core.database.dao.HomeCacheDao
+import com.baothanhbin.shortcompose.core.database.model.HomeCacheEntity
 import com.baothanhbin.shortcompose.core.model.Episode
 import com.baothanhbin.shortcompose.core.model.HomeContent
 import com.baothanhbin.shortcompose.core.model.Movie
@@ -14,14 +16,54 @@ import com.baothanhbin.shortcompose.core.network.NetworkDataSource
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class MovieRepositoryImpl @Inject constructor(
     private val network: NetworkDataSource,
+    private val homeCacheDao: HomeCacheDao,
 ) : MovieRepository {
     private val details = ConcurrentHashMap<Long, FilmDetailResponse>()
+    private val homeSyncMutex = Mutex()
+    private val cacheJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    override suspend fun getHomeContent(language: String): HomeContent = coroutineScope {
+    override suspend fun getHomeContent(language: String): HomeContent {
+        val cached = homeCacheDao.getHomeCache()
+        val cachedContent = cached?.contentJson?.let(::decodeHomeCache)
+        if (
+            cached != null && cachedContent != null &&
+            cached.languageCode.equals(language, ignoreCase = true) &&
+            System.currentTimeMillis() - cached.syncedAt < HOME_CACHE_TTL_MS
+        ) {
+            return cachedContent
+        }
+
+        return try {
+            refreshHomeContent(language)
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            cachedContent ?: throw error
+        }
+    }
+
+    override suspend fun refreshHomeContent(language: String): HomeContent =
+        homeSyncMutex.withLock {
+            fetchHomeContent(language).also { content ->
+                homeCacheDao.saveHomeCache(
+                    HomeCacheEntity(
+                        contentJson = cacheJson.encodeToString(content),
+                        languageCode = language,
+                        syncedAt = System.currentTimeMillis(),
+                    )
+                )
+            }
+        }
+
+    private suspend fun fetchHomeContent(language: String): HomeContent = coroutineScope {
         val trending = async { network.getTopViewedMovies() }
         val releases = async { network.getAllMoviesByPage(size = 20).items }
         val spotlight = async { network.getTopRatedMovies() }
@@ -42,6 +84,9 @@ class MovieRepositoryImpl @Inject constructor(
             spotlight = spotlightResponse.map { it.toMovie(language) },
         )
     }
+
+    private fun decodeHomeCache(contentJson: String): HomeContent? =
+        runCatching { cacheJson.decodeFromString<HomeContent>(contentJson) }.getOrNull()
 
     override suspend fun getMoviesByCategory(category: String, language: String): List<Movie> =
         network.getMoviesByCategory(category, size = 50).items.map { it.toMovie(language) }
@@ -124,4 +169,8 @@ class MovieRepositoryImpl @Inject constructor(
 
     private fun GenreResponse.matches(value: String) = slug.equals(value, true) ||
         translations.orEmpty().any { it.value.equals(value, true) }
+
+    private companion object {
+        const val HOME_CACHE_TTL_MS = 8L * 60L * 60L * 1_000L
+    }
 }

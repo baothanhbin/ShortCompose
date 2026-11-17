@@ -3,6 +3,7 @@ package com.baothanhbin.shortcompose.feature.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.baothanhbin.shortcompose.core.data.repository.LibraryRepository
+import com.baothanhbin.shortcompose.core.data.repository.MovieRepository
 import com.baothanhbin.shortcompose.core.model.Movie
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -18,11 +19,24 @@ data class PlaylistUiState(
 )
 
 @HiltViewModel
-class PlaylistViewModel @Inject constructor(repository: LibraryRepository) : ViewModel() {
+class PlaylistViewModel @Inject constructor(
+    repository: LibraryRepository,
+    movieRepository: MovieRepository,
+) : ViewModel() {
     private val tab = MutableStateFlow(PlaylistTab.RECENTLY_WATCHED)
     val uiState = combine(
         tab, repository.recentlyWatched, repository.favorites
     ) { selected, recent, favorites ->
+        val storedCounts = (recent.map { it.movieId to it.viewCount } +
+            favorites.map { it.movieId to it.viewCount })
+            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+            .mapValues { (_, counts) -> counts.maxOrNull() ?: 0L }
+        val viewCounts = storedCounts.keys.associateWith { movieId ->
+            storedCounts[movieId]?.takeIf { it > 0 }
+                ?: runCatching { movieRepository.getMovie(movieId)?.viewCount }
+                    .getOrNull()
+                ?: 0L
+        }
         val movies = when (selected) {
             PlaylistTab.RECENTLY_WATCHED -> recent.map { watched ->
                 Movie(
@@ -32,6 +46,7 @@ class PlaylistViewModel @Inject constructor(repository: LibraryRepository) : Vie
                     resumeEpisodeId = watched.episodeId,
                     currentEpisodeNumber = watched.episodeNumber,
                     totalEpisodeCount = watched.totalEpisodeCount,
+                    viewCount = viewCounts[watched.movieId] ?: 0,
                     isFavorite = favorites.any { it.episodeId == watched.episodeId },
                 )
             }
@@ -39,6 +54,7 @@ class PlaylistViewModel @Inject constructor(repository: LibraryRepository) : Vie
             PlaylistTab.FAVORITES -> favorites.map { favorite ->
                 Movie(
                     id = favorite.movieId, title = favorite.title, posterUrl = favorite.posterUrl,
+                    viewCount = viewCounts[favorite.movieId] ?: 0,
                     resumeEpisodeId = favorite.episodeId, isFavorite = true,
                 )
             }

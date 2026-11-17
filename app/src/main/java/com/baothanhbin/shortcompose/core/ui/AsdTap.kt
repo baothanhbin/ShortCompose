@@ -29,28 +29,46 @@ import kotlinx.coroutines.launch
 fun Modifier.asdTap(
     enabled: Boolean = true,
     onClick: () -> Unit,
-): Modifier = this then AsdTapElement(enabled = enabled, onClick = onClick)
+): Modifier = this then AsdTapElement(
+    enabled = enabled,
+    invokeImmediately = false,
+    onClick = onClick,
+)
+
+/** Starts navigation/action immediately while keeping ASD113's visual tap animation. */
+fun Modifier.asdTapImmediately(
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+): Modifier = this then AsdTapElement(
+    enabled = enabled,
+    invokeImmediately = true,
+    onClick = onClick,
+)
 
 private data class AsdTapElement(
     val enabled: Boolean,
+    val invokeImmediately: Boolean,
     val onClick: () -> Unit,
 ) : ModifierNodeElement<AsdTapNode>() {
-    override fun create() = AsdTapNode(enabled, onClick)
+    override fun create() = AsdTapNode(enabled, invokeImmediately, onClick)
 
     override fun update(node: AsdTapNode) {
         node.enabled = enabled
+        node.invokeImmediately = invokeImmediately
         node.onClick = onClick
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "asdTap"
         properties["enabled"] = enabled
+        properties["invokeImmediately"] = invokeImmediately
         properties["onClick"] = onClick
     }
 }
 
 private class AsdTapNode(
     var enabled: Boolean,
+    var invokeImmediately: Boolean,
     var onClick: () -> Unit,
 ) : DelegatingNode(), DrawModifierNode, PointerInputModifierNode, SemanticsModifierNode {
 
@@ -61,6 +79,7 @@ private class AsdTapNode(
             detectTapGestures(
                 onTap = {
                     if (!enabled || scale.isRunning) return@detectTapGestures
+                    if (invokeImmediately) onClick()
                     coroutineScope.launch {
                         scale.animateTo(
                             targetValue = 0.94f,
@@ -70,7 +89,7 @@ private class AsdTapNode(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = 90, easing = FastOutSlowInEasing),
                         )
-                        onClick()
+                        if (!invokeImmediately) onClick()
                     }
                 }
             )

@@ -9,7 +9,7 @@ import com.baothanhbin.shortcompose.core.navigation.asdBackEnter
 import com.baothanhbin.shortcompose.core.navigation.asdBackExit
 import com.baothanhbin.shortcompose.core.navigation.asdForwardEnter
 import com.baothanhbin.shortcompose.core.navigation.asdForwardExit
-import com.baothanhbin.shortcompose.feature.cinemix.navigation.CINEMIX_ROUTE
+import com.baothanhbin.shortcompose.app.navigation.MAIN_ROUTE
 import com.baothanhbin.shortcompose.feature.onboarding.AgeConfirmScreen
 import com.baothanhbin.shortcompose.feature.onboarding.AgeRestrictionScreen
 import com.baothanhbin.shortcompose.feature.onboarding.IntroScreen
@@ -78,7 +78,7 @@ fun NavGraphBuilder.onboardingScreens(
         AgeConfirmScreen(
             onComplete = {
                 onOnboardingComplete()
-                navController.navigate(CINEMIX_ROUTE) {
+                navController.navigate(MAIN_ROUTE) {
                     // Keep the startup destinations alive while their slide transitions
                     // run, then clear the entire flow only after entering the main app.
                     popUpTo(SPLASH_ROUTE) { inclusive = true }

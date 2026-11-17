@@ -47,7 +47,7 @@ fun PlaylistContent(
         Modifier
             .fillMaxSize()
             .paint(painterResource(R.drawable.bg_main), contentScale = ContentScale.Crop)
-            .padding(top = 16.dp)
+            .padding(top = 35.dp)
     ) {
         Row(
             Modifier
@@ -63,7 +63,9 @@ fun PlaylistContent(
                 Modifier.weight(1f)
             ) { onTabClick(PlaylistTab.RECENTLY_WATCHED) }
             Tab(
-                stringResource(R.string.playlist_favorites), state.selectedTab == PlaylistTab.FAVORITES, Modifier.weight(1f)
+                stringResource(R.string.playlist_favorites),
+                state.selectedTab == PlaylistTab.FAVORITES,
+                Modifier.weight(1f)
             ) { onTabClick(PlaylistTab.FAVORITES) }
         }
         if (state.movies.isEmpty()) {
@@ -96,7 +98,9 @@ fun PlaylistContent(
         ) {
             items(state.movies, key = { "${it.id}:${it.resumeEpisodeId}" }) { movie ->
                 MovieCard(
-                    movie, { onMovieClick(movie.id) }, Modifier.fillMaxWidth()
+                    movie = movie,
+                    onClick = { onMovieClick(movie.id) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

@@ -67,6 +67,8 @@ private const val BANNER_MIN_SCALE = 0.86f
 private const val BANNER_MAX_ROTATION_DEGREES = 20f
 private const val BANNER_MAX_DIM_ALPHA = 0.50f
 private const val MAX_BANNER_COUNT = 7
+private val InfiniteBannerPageCount: () -> Int = { Int.MAX_VALUE }
+private val SingleBannerPageCount: () -> Int = { 1 }
 
 @Composable
 fun CinemixContent(
@@ -98,58 +100,62 @@ fun CinemixContent(
             }
 
             state.content != null -> Column(
-                modifier = Modifier
-                    .padding(bottom = 112.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-
-                ) {
+                modifier = Modifier.fillMaxSize()
+            ) {
                 TopBar(onSearchClick)
-                if (state.content.banners.isNotEmpty()) {
-                    BannerPager(
-                        state.content.banners, onMovieClick
-                    )
-                }
-
-                SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(state.content.categories, key = { it.queryName }) { category ->
-                        Text(
-                            category.name,
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier
-                                .drawableBackground(R.drawable.bg_cinemix_chip)
-                                .asdTap { onCategoryClick(category.queryName) }
-                                .padding(horizontal = 16.dp, vertical = 11.dp))
+                    if (state.content.banners.isNotEmpty()) {
+                        BannerPager(
+                            state.content.banners, onMovieClick
+                        )
                     }
+
+                    SectionHeader(stringResource(R.string.cinemix_feel_the_vibes))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(state.content.categories, key = { it.queryName }) { category ->
+                            Text(
+                                category.name,
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier
+                                    .drawableBackground(R.drawable.bg_cinemix_chip)
+                                    .asdTap { onCategoryClick(category.queryName) }
+                                    .padding(horizontal = 16.dp, vertical = 11.dp))
+                        }
+                    }
+
+                    MovieSection(
+                        stringResource(R.string.cinemix_trending_now),
+                        state.content.trending,
+                        onMovieClick
+                    ) { onSeeAllClick("trending") }
+
+
+                    MovieSection(
+                        stringResource(R.string.cinemix_new_releases),
+                        state.content.newRelease,
+                        onMovieClick
+                    ) { onSeeAllClick("new") }
+
+
+                    MovieSection(
+                        stringResource(R.string.cinemix_spotlight),
+                        state.content.spotlight,
+                        onMovieClick
+                    ) { onSeeAllClick("spotlight") }
+
+                    state.content.spotlight.firstOrNull()
+                        ?.let { movie -> EditorChoice(movie) { onMovieClick(movie.id) } }
                 }
-
-                MovieSection(
-                    stringResource(R.string.cinemix_trending_now),
-                    state.content.trending,
-                    onMovieClick
-                ) { onSeeAllClick("trending") }
-
-
-                MovieSection(
-                    stringResource(R.string.cinemix_new_releases),
-                    state.content.newRelease,
-                    onMovieClick
-                ) { onSeeAllClick("new") }
-
-
-                MovieSection(
-                    stringResource(R.string.cinemix_spotlight),
-                    state.content.spotlight,
-                    onMovieClick
-                ) { onSeeAllClick("spotlight") }
-
-                state.content.spotlight.firstOrNull()
-                    ?.let { movie -> EditorChoice(movie) { onMovieClick(movie.id) } }
             }
         }
     }
@@ -165,7 +171,7 @@ private fun HomeSkeleton() = LazyColumn(
         Box(
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 35.dp)
                 .height(64.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color.White.copy(.09f))
@@ -213,10 +219,10 @@ private fun HomeSkeleton() = LazyColumn(
 private fun TopBar(onSearchClick: () -> Unit) = Row(
     Modifier
         .fillMaxWidth()
-        .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+        .padding(top = 35.dp, start = 16.dp, end = 16.dp)
         .height(64.dp)
         .paint(painterResource(R.drawable.bg_top), contentScale = ContentScale.FillBounds)
-        .padding(horizontal = 16.dp),
+        .padding(horizontal = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
 ) {
     Text(
@@ -246,9 +252,13 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
             0
         }
     }
-    val state = rememberPagerState(initialPage = initialPage) {
-        if (isInfinite) Int.MAX_VALUE else banners.size
-    }
+    // Top-level providers avoid a captured synthetic lambda that Android Studio Live Edit
+    // cannot safely replace after the pager implementation changes.
+    val pageCountProvider = if (isInfinite) InfiniteBannerPageCount else SingleBannerPageCount
+    val state = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = pageCountProvider,
+    )
     val isDragged by state.interactionSource.collectIsDraggedAsState()
     LaunchedEffect(state, banners.size, isDragged) {
         if (!isDragged) {
@@ -391,6 +401,7 @@ private fun EditorChoice(movie: Movie, onClick: () -> Unit) = Box(
     Modifier
         .fillMaxWidth()
         .padding(horizontal = 16.dp)
+        .padding(bottom = 80.dp)
         .height(202.dp)
         .clip(RoundedCornerShape(20.dp))
         .background(Color.White.copy(.09f))
@@ -466,7 +477,9 @@ private fun MovieSection(
     ) {
         items(movies, key = { it.id }) { movie ->
             MovieCard(
-                movie, { onMovieClick(movie.id) }, Modifier.width(120.dp)
+                movie = movie,
+                onClick = { onMovieClick(movie.id) },
+                modifier = Modifier.width(120.dp),
             )
         }
     }
