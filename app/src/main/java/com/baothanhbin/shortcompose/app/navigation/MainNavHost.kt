@@ -3,19 +3,19 @@ package com.baothanhbin.shortcompose.app.navigation
 import android.net.Uri
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import com.baothanhbin.shortcompose.core.navigation.asdBackEnter
+import com.baothanhbin.shortcompose.core.navigation.asdBackExit
+import com.baothanhbin.shortcompose.core.navigation.asdForwardEnter
+import com.baothanhbin.shortcompose.core.navigation.asdForwardExit
 import com.baothanhbin.shortcompose.feature.cinemix.navigation.CINEMIX_ROUTE
 import com.baothanhbin.shortcompose.feature.cinemix.navigation.cinemixScreen
 import com.baothanhbin.shortcompose.feature.discover.navigation.SEARCH_ROUTE
 import com.baothanhbin.shortcompose.feature.discover.navigation.discoverScreens
 import com.baothanhbin.shortcompose.feature.offline.navigation.offlineScreen
-import com.baothanhbin.shortcompose.feature.onboarding.navigation.SPLASH_ROUTE
 import com.baothanhbin.shortcompose.feature.onboarding.navigation.onboardingScreens
 import com.baothanhbin.shortcompose.feature.player.navigation.playerScreen
 import com.baothanhbin.shortcompose.feature.playlist.navigation.playlistScreen
@@ -27,7 +27,6 @@ import com.baothanhbin.shortcompose.feature.settings.navigation.settingsScreen
 import com.baothanhbin.shortcompose.feature.settings.navigation.settingsSecondaryScreens
 import com.baothanhbin.shortcompose.feature.settings.navigation.SETTINGS_ROUTE
 
-private const val ASD_SCREEN_TRANSITION_MS = 400
 private val topLevelRoutes = setOf(CINEMIX_ROUTE, PLAYLIST_ROUTE, SETTINGS_ROUTE)
 
 @Composable
@@ -42,34 +41,34 @@ fun MainNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = SPLASH_ROUTE,
+        startDestination = CINEMIX_ROUTE,
         modifier = modifier,
         enterTransition = {
             if (initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes) {
                 EnterTransition.None
             } else {
-                slideInHorizontally(tween(ASD_SCREEN_TRANSITION_MS)) { fullWidth -> fullWidth }
+                asdForwardEnter()
             }
         },
         exitTransition = {
             if (initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes) {
                 ExitTransition.None
             } else {
-                slideOutHorizontally(tween(ASD_SCREEN_TRANSITION_MS)) { fullWidth -> -fullWidth }
+                asdForwardExit()
             }
         },
         popEnterTransition = {
             if (initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes) {
                 EnterTransition.None
             } else {
-                slideInHorizontally(tween(ASD_SCREEN_TRANSITION_MS)) { fullWidth -> -fullWidth }
+                asdBackEnter()
             }
         },
         popExitTransition = {
             if (initialState.destination.route in topLevelRoutes && targetState.destination.route in topLevelRoutes) {
                 ExitTransition.None
             } else {
-                slideOutHorizontally(tween(ASD_SCREEN_TRANSITION_MS)) { fullWidth -> fullWidth }
+                asdBackExit()
             }
         },
     ) {

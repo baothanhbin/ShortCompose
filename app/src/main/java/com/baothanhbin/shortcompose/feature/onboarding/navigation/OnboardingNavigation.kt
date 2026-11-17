@@ -1,9 +1,14 @@
 package com.baothanhbin.shortcompose.feature.onboarding.navigation
 
+import androidx.compose.animation.EnterTransition
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
+import com.baothanhbin.shortcompose.core.navigation.asdBackEnter
+import com.baothanhbin.shortcompose.core.navigation.asdBackExit
+import com.baothanhbin.shortcompose.core.navigation.asdForwardEnter
+import com.baothanhbin.shortcompose.core.navigation.asdForwardExit
 import com.baothanhbin.shortcompose.feature.cinemix.navigation.CINEMIX_ROUTE
 import com.baothanhbin.shortcompose.feature.onboarding.AgeConfirmScreen
 import com.baothanhbin.shortcompose.feature.onboarding.AgeRestrictionScreen
@@ -24,39 +29,72 @@ fun NavGraphBuilder.onboardingScreens(
     isAppReady: Boolean,
     onOnboardingComplete: () -> Unit,
 ) {
-    composable(SPLASH_ROUTE) {
+    composable(
+        route = SPLASH_ROUTE,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { asdForwardExit() },
+    ) {
         SplashScreen(isAppReady = isAppReady) {
             navController.navigate(LANGUAGE_START_ROUTE) {
-                popUpTo(SPLASH_ROUTE) { inclusive = true }
                 launchSingleTop = true
             }
         }
     }
-    composable(LANGUAGE_START_ROUTE) {
+    composable(
+        route = LANGUAGE_START_ROUTE,
+        enterTransition = { asdForwardEnter() },
+        exitTransition = { asdForwardExit() },
+        popEnterTransition = { asdBackEnter() },
+        popExitTransition = { asdBackExit() },
+    ) {
         LanguageScreen(onContinue = { navController.navigate(INTRO_ROUTE) })
     }
-    composable(INTRO_ROUTE) {
+    composable(
+        route = INTRO_ROUTE,
+        enterTransition = { asdForwardEnter() },
+        exitTransition = { asdForwardExit() },
+        popEnterTransition = { asdBackEnter() },
+        popExitTransition = { asdBackExit() },
+    ) {
         IntroScreen(onFinished = { navController.navigate(PERMISSION_ROUTE) })
     }
     composable(
         route = PERMISSION_ROUTE,
         deepLinks = listOf(navDeepLink { uriPattern = "example://app/PermissionActivity" }),
+        enterTransition = { asdForwardEnter() },
+        exitTransition = { asdForwardExit() },
+        popEnterTransition = { asdBackEnter() },
+        popExitTransition = { asdBackExit() },
     ) {
         PermissionScreen(onContinue = { navController.navigate(AGE_CONFIRM_ROUTE) })
     }
-    composable(AGE_CONFIRM_ROUTE) {
+    composable(
+        route = AGE_CONFIRM_ROUTE,
+        enterTransition = { asdForwardEnter() },
+        exitTransition = { asdForwardExit() },
+        popEnterTransition = { asdBackEnter() },
+        popExitTransition = { asdBackExit() },
+    ) {
         AgeConfirmScreen(
             onComplete = {
                 onOnboardingComplete()
                 navController.navigate(CINEMIX_ROUTE) {
-                    popUpTo(LANGUAGE_START_ROUTE) { inclusive = true }
+                    // Keep the startup destinations alive while their slide transitions
+                    // run, then clear the entire flow only after entering the main app.
+                    popUpTo(SPLASH_ROUTE) { inclusive = true }
                     launchSingleTop = true
                 }
             },
             onRestricted = { navController.navigate(AGE_RESTRICTION_ROUTE) },
         )
     }
-    composable(AGE_RESTRICTION_ROUTE) {
+    composable(
+        route = AGE_RESTRICTION_ROUTE,
+        enterTransition = { asdForwardEnter() },
+        exitTransition = { asdForwardExit() },
+        popEnterTransition = { asdBackEnter() },
+        popExitTransition = { asdBackExit() },
+    ) {
         AgeRestrictionScreen(onRetry = { navController.popBackStack(AGE_CONFIRM_ROUTE, inclusive = false) })
     }
 }

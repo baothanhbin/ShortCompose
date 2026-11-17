@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.paint
@@ -109,10 +110,18 @@ fun MainApp(
         }
     }
     val contentAlpha = remember { Animatable(1f) }
-    // Mirrors ASD113's MainActivity: swap tab immediately, then fade the page from .96 to 1.
-    LaunchedEffect(currentDestination?.route) {
-        contentAlpha.snapTo(0.96f)
-        contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 120))
+    var isTabFadeRunning by remember { mutableStateOf(false) }
+    // Mirrors Short's MainActivity: swap tab immediately, then fade the page from .96 to 1.
+    LaunchedEffect(currentDestination?.route, isTopLevel) {
+        if (isTopLevel) {
+            isTabFadeRunning = true
+            contentAlpha.snapTo(0.96f)
+            contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 120))
+            isTabFadeRunning = false
+        } else {
+            isTabFadeRunning = false
+            contentAlpha.snapTo(1f)
+        }
     }
 
     Scaffold(
@@ -120,6 +129,9 @@ fun MainApp(
         // Without this, Scaffold's default light surface is visible through the glass.
         containerColor = Color(0xFF130A0B),
         contentColor = Color.White,
+        // Every destination owns its spacing. Do not push the NavHost below the
+        // status bar: backgrounds and splash artwork must render edge-to-edge.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (isTopLevel) {
             CinemixBottomBar(
@@ -137,7 +149,13 @@ fun MainApp(
             onOnboardingComplete = viewModel::completeOnboarding,
             modifier = Modifier
                 .padding(top = innerPadding.calculateTopPadding())
-                .graphicsLayer { alpha = contentAlpha.value },
+                .then(
+                    if (isTabFadeRunning) {
+                        Modifier.graphicsLayer { alpha = contentAlpha.value }
+                    } else {
+                        Modifier
+                    }
+                ),
         )
     }
 }

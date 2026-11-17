@@ -8,13 +8,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.SemanticsModifierNode
@@ -24,11 +22,10 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
 
-/** Matches ASD113's View.animateTap(): 0.94 scale in 70 ms, then back in 90 ms. */
+/** Matches Short's View.animateTap(): 0.94 scale in 70 ms, then back in 90 ms. */
 fun Modifier.asdTap(
     enabled: Boolean = true,
     onClick: () -> Unit,
@@ -55,7 +52,7 @@ private data class AsdTapElement(
 private class AsdTapNode(
     var enabled: Boolean,
     var onClick: () -> Unit,
-) : DelegatingNode(), LayoutModifierNode, PointerInputModifierNode, SemanticsModifierNode {
+) : DelegatingNode(), DrawModifierNode, PointerInputModifierNode, SemanticsModifierNode {
 
     private val scale = Animatable(1f)
 
@@ -92,16 +89,12 @@ private class AsdTapNode(
         pointerInputNode.onCancelPointerInput()
     }
 
-    override fun MeasureScope.measure(
-        measurable: Measurable,
-        constraints: Constraints,
-    ): MeasureResult {
-        val placeable = measurable.measure(constraints)
-        return layout(placeable.width, placeable.height) {
-            placeable.placeWithLayer(0, 0) {
-                scaleX = scale.value
-                scaleY = scale.value
-            }
+    override fun ContentDrawScope.draw() {
+        // Drawing the scale directly avoids allocating a persistent graphics layer for
+        // every card/chip. This matters while scrolling the main Lazy layouts.
+        val contentScope = this
+        scale(scale.value) {
+            contentScope.drawContent()
         }
     }
 

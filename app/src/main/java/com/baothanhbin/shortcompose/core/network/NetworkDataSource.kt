@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-/** Ktor counterpart of ASD113's SeriesService. A new signed header set is made per request. */
+/** Ktor counterpart of Short's SeriesService. A new signed header set is made per request. */
 class NetworkDataSource(context: Context) {
     private val appContext = context.applicationContext
     private val config = ApiConfigManager(appContext)

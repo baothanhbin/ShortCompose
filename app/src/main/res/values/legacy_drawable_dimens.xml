@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Names referenced by the original ASD113 shape drawables. -->
+    <!-- Names referenced by the original Short shape drawables. -->
     <dimen name="_13sdp">13dp</dimen>
     <dimen name="_16sdp">16dp</dimen>
 </resources>
