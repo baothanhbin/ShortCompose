@@ -13,9 +13,8 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.baothanhbin.shortcompose.R
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
-import com.baothanhbin.shortcompose.core.ui.asdTap
-import androidx.compose.foundation.layout.fillMaxSize
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -134,7 +133,7 @@ private fun ExitDialogButton(
 ) = Box(
     modifier.height(40.dp)
         .drawableBackground(background)
-        .asdTap(onClick = onClick),
+        .Tap(onClick = onClick),
     contentAlignment = Alignment.Center,
 ) {
     Text(label, color = Color.White, style = MaterialTheme.typography.labelLarge)

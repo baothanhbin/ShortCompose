@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.core.model.Movie
-import com.baothanhbin.shortcompose.core.ui.asdTap
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
 import java.util.Locale
 
 @Composable
@@ -41,7 +41,7 @@ fun MovieCard(
     modifier: Modifier = Modifier,
 ) {
     val viewCountText = movie.viewCount.takeIf { it > 0 }?.compact()
-    Column(modifier.asdTap(onClick = onClick)) {
+    Column(modifier.Tap(onClick = onClick)) {
         Box(
             Modifier
                 .fillMaxWidth()

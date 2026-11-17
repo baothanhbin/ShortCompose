@@ -3,35 +3,37 @@ package com.baothanhbin.shortcompose.core.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.navigation.NavBackStackEntry
 
 private const val ASD_SCREEN_TRANSITION_MS = 400
 
-/** Short forward navigation: the next screen enters from the right. */
+/** Short forward navigation: the next screen enters from the right and fades in. */
 fun AnimatedContentTransitionScope<NavBackStackEntry>.asdForwardEnter(): EnterTransition =
     slideIntoContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Left,
         animationSpec = tween(ASD_SCREEN_TRANSITION_MS),
-    )
+    ) + fadeIn(animationSpec = tween(ASD_SCREEN_TRANSITION_MS))
 
-/** Short forward navigation: the current screen leaves to the left. */
+/** Short forward navigation: the current screen leaves to the left and fades out. */
 fun AnimatedContentTransitionScope<NavBackStackEntry>.asdForwardExit(): ExitTransition =
     slideOutOfContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Left,
         animationSpec = tween(ASD_SCREEN_TRANSITION_MS),
-    )
+    ) + fadeOut(animationSpec = tween(ASD_SCREEN_TRANSITION_MS))
 
-/** Short back navigation: the previous screen enters from the left. */
+/** Short back navigation: the previous screen enters from the left and fades in. */
 fun AnimatedContentTransitionScope<NavBackStackEntry>.asdBackEnter(): EnterTransition =
     slideIntoContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Right,
         animationSpec = tween(ASD_SCREEN_TRANSITION_MS),
-    )
+    ) + fadeIn(animationSpec = tween(ASD_SCREEN_TRANSITION_MS))
 
-/** Short back navigation: the current screen leaves to the right. */
+/** Short back navigation: the current screen leaves to the right and fades out. */
 fun AnimatedContentTransitionScope<NavBackStackEntry>.asdBackExit(): ExitTransition =
     slideOutOfContainer(
         towards = AnimatedContentTransitionScope.SlideDirection.Right,
         animationSpec = tween(ASD_SCREEN_TRANSITION_MS),
-    )
+    ) + fadeOut(animationSpec = tween(ASD_SCREEN_TRANSITION_MS))

@@ -2,14 +2,12 @@ package com.baothanhbin.shortcompose.feature.cinemix.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,13 +23,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,31 +47,38 @@ import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.core.model.Movie
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
 import com.baothanhbin.shortcompose.core.ui.component.MovieCard
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 import com.baothanhbin.shortcompose.core.ui.preview.previewHomeContent
 import com.baothanhbin.shortcompose.feature.cinemix.CinemixUiState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 private val Background = Color(0xFF130A0B)
 private val Accent = Color(0xFFEA7B71)
-private const val BANNER_WIDTH_RATIO = 0.78f
+private const val BANNER_WIDTH_RATIO = 0.65f // modifer heigh banner
 private const val BANNER_ASPECT_RATIO = 0.75f
 private const val BANNER_MIN_SCALE = 0.86f
-private const val BANNER_MAX_ROTATION_DEGREES = 20f
-private const val BANNER_MAX_DIM_ALPHA = 0.50f
 private const val MAX_BANNER_COUNT = 7
+private const val BANNER_AUTO_SCROLL_DELAY_MS = 8_000L
 private val InfiniteBannerPageCount: () -> Int = { Int.MAX_VALUE }
 private val SingleBannerPageCount: () -> Int = { 1 }
+private val BannerShape = RoundedCornerShape(24.dp)
+private val BannerBackgroundBrush = Brush.linearGradient(listOf(Color(0xFF6A3038), Background))
+private val BannerOverlayBrush = Brush.verticalGradient(
+    listOf(Color.Transparent, Color(0xD0000000))
+)
 
 @Composable
 fun CinemixContent(
     state: CinemixUiState,
     onRetry: () -> Unit,
     onMovieClick: (Long) -> Unit,
+    onFavoriteClick: (Movie) -> Unit,
     onSearchClick: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onSeeAllClick: (String) -> Unit,
@@ -95,7 +99,7 @@ fun CinemixContent(
                     color = Accent,
                     modifier = Modifier
                         .padding(16.dp)
-                        .asdTap(onClick = onRetry)
+                        .Tap(onClick = onRetry)
                 )
             }
 
@@ -112,7 +116,9 @@ fun CinemixContent(
                 ) {
                     if (state.content.banners.isNotEmpty()) {
                         BannerPager(
-                            state.content.banners, onMovieClick
+                            movies = state.content.banners,
+                            onMovieClick = onMovieClick,
+                            onFavoriteClick = onFavoriteClick,
                         )
                     }
 
@@ -127,8 +133,8 @@ fun CinemixContent(
                                 color = Color.White,
                                 style = MaterialTheme.typography.labelLarge,
                                 modifier = Modifier
+                                    .Tap { onCategoryClick(category.queryName) }
                                     .drawableBackground(R.drawable.bg_cinemix_chip)
-                                    .asdTap { onCategoryClick(category.queryName) }
                                     .padding(horizontal = 16.dp, vertical = 11.dp))
                         }
                     }
@@ -236,12 +242,16 @@ private fun TopBar(onSearchClick: () -> Unit) = Row(
         stringResource(R.string.action_search),
         modifier = Modifier
             .size(48.dp)
-            .asdTap(onClick = onSearchClick)
+            .Tap(onClick = onSearchClick)
     )
 }
 
 @Composable
-private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
+private fun BannerPager(
+    movies: List<Movie>,
+    onMovieClick: (Long) -> Unit,
+    onFavoriteClick: (Movie) -> Unit,
+) {
     val banners = remember(movies) { movies.take(MAX_BANNER_COUNT) }
     val isInfinite = banners.size > 1
     val initialPage = remember(banners.size) {
@@ -259,14 +269,19 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
         initialPage = initialPage,
         pageCount = pageCountProvider,
     )
-    val isDragged by state.interactionSource.collectIsDraggedAsState()
-    LaunchedEffect(state, banners.size, isDragged) {
-        if (!isDragged) {
-            while (isInfinite) {
-                delay(8_000)
-                state.animateScrollToPage(state.currentPage + 1)
+    // Restart the countdown only after a manual fling has fully settled. This avoids
+    // competing with the user's gesture or starting the next slide mid-settle.
+    LaunchedEffect(state, isInfinite) {
+        if (!isInfinite) return@LaunchedEffect
+
+        snapshotFlow { state.isScrollInProgress }.collectLatest { isScrolling ->
+                if (!isScrolling) {
+                    delay(BANNER_AUTO_SCROLL_DELAY_MS)
+                    if (!state.isScrollInProgress) {
+                        launch { state.animateScrollToPage(state.currentPage + 1) }
+                    }
+                }
             }
-        }
     }
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -277,7 +292,9 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
 
         HorizontalPager(
             state = state,
-            modifier = Modifier.fillMaxWidth().height(pageHeight),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(pageHeight),
             pageSize = PageSize.Fixed(pageWidth),
             contentPadding = PaddingValues(horizontal = horizontalPadding),
             pageSpacing = 12.dp,
@@ -285,28 +302,26 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
             key = { page -> page },
         ) { page ->
             val movie = banners[page % banners.size]
-            val pageOffset = (
-                (page - state.currentPage) - state.currentPageOffsetFraction
-            ).coerceIn(-1f, 1f)
+            val rating = remember(movie.rating) {
+                if (movie.rating > 0) "%.1f".format(movie.rating) else "4.7"
+            }
+            val pageOffset =
+                ((page - state.currentPage) - state.currentPageOffsetFraction).coerceIn(-1f, 1f)
             val distance = pageOffset.absoluteValue
             val pageScale = 1f - distance * (1f - BANNER_MIN_SCALE)
             val shrinkMarginPx = pageWidthPx * (1f - pageScale) / 2f
 
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = pageScale
-                        scaleY = pageScale
-                        rotationY = -pageOffset * BANNER_MAX_ROTATION_DEGREES
-                        translationX = -pageOffset * shrinkMarginPx
-                        cameraDistance = 8_000f * density.density
-                        transformOrigin = TransformOrigin.Center
-                    }
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF6A3038), Background)))
-                    .asdTap { onMovieClick(movie.id) }
-            ) {
+            Box(Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = pageScale
+                    scaleY = pageScale
+                    translationX = -pageOffset * shrinkMarginPx
+                    transformOrigin = TransformOrigin.Center
+                }
+                .Tap { onMovieClick(movie.id) }
+                .clip(BannerShape)
+                .background(BannerBackgroundBrush)) {
                 AsyncImage(
                     movie.posterUrl,
                     movie.title,
@@ -316,21 +331,8 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
                 Box(
                     Modifier
                         .matchParentSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0xD0000000))
-                            )
-                        )
+                        .background(BannerOverlayBrush)
                 )
-                if (distance > 0f) {
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .background(
-                                Color.Black.copy(alpha = distance * BANNER_MAX_DIM_ALPHA)
-                            )
-                    )
-                }
                 Text(
                     stringResource(R.string.cinemix_for_you),
                     color = Color.White,
@@ -351,7 +353,7 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        if (movie.rating > 0) "%.1f".format(movie.rating) else "4.7",
+                        rating,
                         color = Color.White,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(start = 8.dp),
@@ -364,6 +366,9 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
                         .padding(start = 10.dp, bottom = 10.dp, end = 66.dp)
                         .fillMaxWidth()
                         .height(48.dp)
+                        // Tap must wrap the background and padding; otherwise only the
+                        // content after it (the icon/text) receives the visual scale.
+                        .Tap { onMovieClick(movie.id) }
                         .drawableBackground(R.drawable.bg_age_button_primary)
                         .padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -382,6 +387,7 @@ private fun BannerPager(movies: List<Movie>, onMovieClick: (Long) -> Unit) {
                         .align(Alignment.BottomEnd)
                         .padding(end = 10.dp, bottom = 10.dp)
                         .size(48.dp)
+                        .Tap { onFavoriteClick(movie) }
                         .drawableBackground(R.drawable.bg_cinemix_banner),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -405,7 +411,7 @@ private fun EditorChoice(movie: Movie, onClick: () -> Unit) = Box(
         .height(202.dp)
         .clip(RoundedCornerShape(20.dp))
         .background(Color.White.copy(.09f))
-        .asdTap(onClick = onClick),
+        .Tap(onClick = onClick),
 ) {
     AsyncImage(
         movie.posterUrl, movie.title, Modifier.matchParentSize(), contentScale = ContentScale.Crop
@@ -512,8 +518,8 @@ private fun SectionHeader(title: String, onSeeAll: (() -> Unit)? = null) = Row(
         Modifier
             .width(95.dp)
             .height(44.dp)
-            .paint(painterResource(R.drawable.bg_see_all), contentScale = ContentScale.FillBounds)
-            .asdTap(onClick = onSeeAll),
+            .Tap(onClick = onSeeAll)
+            .paint(painterResource(R.drawable.bg_see_all), contentScale = ContentScale.FillBounds),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -533,6 +539,7 @@ private fun CinemixContentPreview() = PreviewTheme {
         state = CinemixUiState(isLoading = false, content = previewHomeContent),
         onRetry = {},
         onMovieClick = {},
+        onFavoriteClick = {},
         onSearchClick = {},
         onCategoryClick = {},
         onSeeAllClick = {},
@@ -542,5 +549,5 @@ private fun CinemixContentPreview() = PreviewTheme {
 @Preview(name = "Cinemix - Loading", showBackground = true)
 @Composable
 private fun CinemixLoadingPreview() = PreviewTheme {
-    CinemixContent(CinemixUiState(), {}, {}, {}, {}, {})
+    CinemixContent(CinemixUiState(), {}, {}, {}, {}, {}, {})
 }

@@ -17,6 +17,7 @@ fun CinemixRoute(
         state = viewModel.uiState.collectAsStateWithLifecycle().value,
         onRetry = viewModel::load,
         onMovieClick = onMovieClick,
+        onFavoriteClick = viewModel::toggleFavorite,
         onSearchClick = onSearchClick,
         onCategoryClick = onCategoryClick,
         onSeeAllClick = onSeeAllClick,

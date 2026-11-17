@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.app.navigation.TopLevelDestination
-import com.baothanhbin.shortcompose.core.ui.asdTapImmediately
+import com.baothanhbin.shortcompose.core.utils.TapImmediately
 import androidx.compose.ui.tooling.preview.Preview
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 
@@ -107,7 +106,7 @@ private fun TopBarTab(
             .width(if (selected) 113.dp else 80.dp)
             .height(if (selected) 52.dp else 48.dp)
             .clip(SelectedTabShape)
-            .asdTapImmediately(enabled = !selected) { onClick(destination) },
+            .TapImmediately(enabled = !selected) { onClick(destination) },
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {

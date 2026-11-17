@@ -1,6 +1,5 @@
 package com.baothanhbin.shortcompose.feature.playlist.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,13 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -31,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.baothanhbin.shortcompose.core.ui.component.MovieCard
 import com.baothanhbin.shortcompose.R
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.utils.Tap
 import com.baothanhbin.shortcompose.feature.playlist.PlaylistTab
 import com.baothanhbin.shortcompose.feature.playlist.PlaylistUiState
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
@@ -116,7 +113,7 @@ private fun Tab(text: String, selected: Boolean, modifier: Modifier, onClick: ()
                 painterResource(if (selected) R.drawable.bg_playlist_selected else R.drawable.bg_playlist_unselected),
                 contentScale = ContentScale.FillBounds
             )
-            .asdTap(onClick = onClick), contentAlignment = Alignment.Center
+            .Tap(onClick = onClick), contentAlignment = Alignment.Center
     ) {
         Text(
             text,

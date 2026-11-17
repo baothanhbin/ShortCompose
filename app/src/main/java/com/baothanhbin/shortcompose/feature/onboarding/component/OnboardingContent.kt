@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import com.baothanhbin.shortcompose.R
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -106,7 +106,7 @@ fun LanguageSelectionContent(
             stringResource(R.string.action_continue),
             Modifier
                 .size(48.dp)
-                .asdTap(onClick = onContinue)
+                .Tap(onClick = onContinue)
         )
     }
     Column(
@@ -123,7 +123,7 @@ fun LanguageSelectionContent(
                     .height(60.dp)
                     .padding(bottom = 6.dp)
                     .drawableBackground(if (selected == item.code) R.drawable.bg_language_card_selected else R.drawable.bg_language_card_normal)
-                    .asdTap { onSelect(item.code) }
+                    .Tap { onSelect(item.code) }
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -182,7 +182,7 @@ fun IntroPagerContent(onFinished: () -> Unit) {
                 stringResource(if (pagerState.currentPage == 2) R.string.action_continue else R.string.action_next),
                 color = Accent,
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.asdTap {
+                modifier = Modifier.Tap {
                     if (pagerState.currentPage == 2) onFinished()
                     else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 }.padding(12.dp),
@@ -268,7 +268,7 @@ fun PermissionContent(onRequest: () -> Unit, onSkip: () -> Unit) = Column(
             .padding(top = 14.dp)
             .height(55.dp)
             .drawableBackground(R.drawable.bg_permission_row)
-            .asdTap(onClick = onRequest)
+            .Tap(onClick = onRequest)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -290,14 +290,14 @@ fun PermissionContent(onRequest: () -> Unit, onSkip: () -> Unit) = Column(
         color = Accent,
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier
-            .asdTap(onClick = onRequest)
+            .Tap(onClick = onRequest)
             .padding(12.dp)
     )
     Text(
         stringResource(R.string.action_skip_continue),
         color = Color.White.copy(.65f),
         modifier = Modifier
-            .asdTap(onClick = onSkip)
+            .Tap(onClick = onSkip)
             .padding(bottom = 12.dp)
     )
 }
@@ -365,7 +365,7 @@ private fun ActionButton(text: String, @DrawableRes background: Int, onClick: ()
         .height(48.dp)
         .padding(vertical = 4.dp)
         .drawableBackground(background)
-        .asdTap(onClick = onClick),
+        .Tap(onClick = onClick),
     contentAlignment = Alignment.Center,
 ) { Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge) }
 

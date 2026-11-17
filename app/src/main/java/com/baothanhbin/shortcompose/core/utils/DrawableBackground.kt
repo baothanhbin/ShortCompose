@@ -1,4 +1,4 @@
-package com.baothanhbin.shortcompose.core.ui
+package com.baothanhbin.shortcompose.core.utils
 
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable

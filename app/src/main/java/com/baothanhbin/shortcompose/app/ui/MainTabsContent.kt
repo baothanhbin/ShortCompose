@@ -28,7 +28,7 @@ fun MainTabsContent(
 
     LaunchedEffect(selectedPage) {
         if (pagerState.currentPage != selectedPage) {
-            pagerState.scrollToPage(selectedPage)
+            pagerState.animateScrollToPage(selectedPage)
         }
     }
 

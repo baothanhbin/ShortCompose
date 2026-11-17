@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.widget.RatingBar
-import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
@@ -15,11 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -40,8 +35,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.tooling.preview.Preview
 import com.baothanhbin.shortcompose.R
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
 
 @Composable
@@ -112,12 +107,12 @@ private fun RatingDialog(onDismiss: () -> Unit, onSubmit: (Int) -> Unit) {
 
 @Composable
 private fun RatingButton(text: String, @DrawableRes background: Int, onClick: () -> Unit) = Box(
-    Modifier.padding(top = 10.dp).width(140.dp).height(42.dp).drawableBackground(background).asdTap(onClick = onClick), contentAlignment = Alignment.Center,
+    Modifier.padding(top = 10.dp).width(140.dp).height(42.dp).drawableBackground(background).Tap(onClick = onClick), contentAlignment = Alignment.Center,
 ) { Text(text, color = Color.White) }
 
 @Composable
 private fun SettingRow(@DrawableRes icon: Int, label: String, onClick: () -> Unit) = Row(
-    Modifier.fillMaxWidth().height(52.dp).asdTap(onClick = onClick), verticalAlignment = Alignment.CenterVertically,
+    Modifier.fillMaxWidth().height(52.dp).Tap(onClick = onClick), verticalAlignment = Alignment.CenterVertically,
 ) {
     Image(painterResource(icon), label, Modifier.size(26.dp))
     Text(label, color = Color.White, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 14.dp))

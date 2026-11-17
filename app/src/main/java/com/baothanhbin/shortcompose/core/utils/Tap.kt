@@ -1,4 +1,4 @@
-package com.baothanhbin.shortcompose.core.ui
+package com.baothanhbin.shortcompose.core.utils
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -26,47 +26,47 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
 
 /** Matches Short's View.animateTap(): 0.94 scale in 70 ms, then back in 90 ms. */
-fun Modifier.asdTap(
+fun Modifier.Tap(
     enabled: Boolean = true,
     onClick: () -> Unit,
-): Modifier = this then AsdTapElement(
+): Modifier = this then TapElement(
     enabled = enabled,
     invokeImmediately = false,
     onClick = onClick,
 )
 
 /** Starts navigation/action immediately while keeping ASD113's visual tap animation. */
-fun Modifier.asdTapImmediately(
+fun Modifier.TapImmediately(
     enabled: Boolean = true,
     onClick: () -> Unit,
-): Modifier = this then AsdTapElement(
+): Modifier = this then TapElement(
     enabled = enabled,
     invokeImmediately = true,
     onClick = onClick,
 )
 
-private data class AsdTapElement(
+private data class TapElement(
     val enabled: Boolean,
     val invokeImmediately: Boolean,
     val onClick: () -> Unit,
-) : ModifierNodeElement<AsdTapNode>() {
-    override fun create() = AsdTapNode(enabled, invokeImmediately, onClick)
+) : ModifierNodeElement<TapNode>() {
+    override fun create() = TapNode(enabled, invokeImmediately, onClick)
 
-    override fun update(node: AsdTapNode) {
+    override fun update(node: TapNode) {
         node.enabled = enabled
         node.invokeImmediately = invokeImmediately
         node.onClick = onClick
     }
 
     override fun InspectorInfo.inspectableProperties() {
-        name = "asdTap"
+        name = "Tap"
         properties["enabled"] = enabled
         properties["invokeImmediately"] = invokeImmediately
         properties["onClick"] = onClick
     }
 }
 
-private class AsdTapNode(
+private class TapNode(
     var enabled: Boolean,
     var invokeImmediately: Boolean,
     var onClick: () -> Unit,

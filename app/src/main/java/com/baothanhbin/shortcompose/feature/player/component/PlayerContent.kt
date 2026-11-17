@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,11 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -64,8 +60,8 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.baothanhbin.shortcompose.R
 import com.baothanhbin.shortcompose.core.model.Episode
-import com.baothanhbin.shortcompose.core.ui.drawableBackground
-import com.baothanhbin.shortcompose.core.ui.asdTap
+import com.baothanhbin.shortcompose.core.utils.drawableBackground
+import com.baothanhbin.shortcompose.core.utils.Tap
 import com.baothanhbin.shortcompose.feature.player.PlayerUiState
 import com.baothanhbin.shortcompose.feature.player.VideoCache
 import com.baothanhbin.shortcompose.core.ui.preview.PreviewTheme
@@ -110,7 +106,7 @@ fun PlayerContent(
                 color = Color(0xFFEA7B71),
                 modifier = Modifier
                     .padding(16.dp)
-                    .asdTap(onClick = onBack)
+                    .Tap(onClick = onBack)
             )
         }
 
@@ -262,7 +258,7 @@ private fun EpisodeFeed(
                     .align(Alignment.Center)
                     .size(64.dp)
                     .drawableBackground(R.drawable.bg_player_center_button)
-                    .asdTap {
+                    .Tap {
                         if (playing) currentPlayer.pause()
                         else {
                             if (currentPlayer.playbackState == Player.STATE_ENDED) currentPlayer.seekTo(
@@ -317,7 +313,7 @@ private fun PlayerTopBar(state: PlayerUiState, onBack: () -> Unit, onFavorite: (
         Modifier
             .size(48.dp)
             .drawableBackground(R.drawable.bg_player_button_16)
-            .asdTap(onClick = onBack),
+            .Tap(onClick = onBack),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -349,7 +345,7 @@ private fun PlayerTopBar(state: PlayerUiState, onBack: () -> Unit, onFavorite: (
         Modifier
             .size(48.dp)
             .drawableBackground(R.drawable.bg_player_button_16)
-            .asdTap(onClick = onFavorite),
+            .Tap(onClick = onFavorite),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -447,7 +443,7 @@ private fun PlayerBottomPanel(
                         .width(48.dp)
                         .height(40.dp)
                         .drawableBackground(if (episode.isLocked) R.drawable.bg_player_episode_locked else R.drawable.bg_player_episode_state)
-                        .asdTap(enabled = !episode.isLocked) { onEpisode(index) },
+                        .Tap(enabled = !episode.isLocked) { onEpisode(index) },
                     contentAlignment = Alignment.Center,
                 ) {
                     if (episode.isLocked) {
@@ -527,7 +523,7 @@ private fun ControlButton(
 ) = Box(
     Modifier
         .size(40.dp)
-        .asdTap(enabled = enabled, onClick = onClick),
+        .Tap(enabled = enabled, onClick = onClick),
     contentAlignment = Alignment.Center,
 ) {
     Image(
@@ -547,7 +543,7 @@ private fun <T> OptionRow(options: List<Pair<String, T>>, onSelect: (T) -> Unit)
                     .weight(1f)
                     .height(36.dp)
                     .drawableBackground(R.drawable.bg_player_option)
-                    .asdTap { onSelect(value) },
+                    .Tap { onSelect(value) },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(label, color = Color.White, style = MaterialTheme.typography.labelSmall)
